@@ -64,11 +64,6 @@ namespace ClipRate
       this.BeginCheckLoop();
     }
 
-    private static bool IsPauseWindow(string title)
-    {
-      return title == "ClipRate" || (title.EndsWith("pixiv - Google Chrome") && !title.Contains("ウマ娘"));
-    }
-
     public void BeginCheckLoop()
     {
       Task.Run(async () =>
@@ -80,20 +75,20 @@ namespace ClipRate
         {
           try
           {
-            var title = GetActiveWindowTitle();
+            var title = new WindowTitle(GetActiveWindowTitle());
 
-            if (IsPauseWindow(title))
+            if (title.IsPauseWindow)
             {
               var pauseStartTime = DateTime.Now;
-              while (IsPauseWindow(title))
+              while (title.IsPauseWindow)
               {
                 await Task.Delay(100);
-                title = GetActiveWindowTitle();
+                title = new WindowTitle(GetActiveWindowTitle());
               }
               this._timeCorrection += (int)(DateTime.Now - pauseStartTime).TotalSeconds;
             }
 
-            if (title == "CLIP STUDIO PAINT" || title == "Eagle" || title.EndsWith("- OneNote") || title.EndsWith("DesignDoll"))
+            if (title.IsWorkingWindow)
             {
               this._activeCount++;
             }
