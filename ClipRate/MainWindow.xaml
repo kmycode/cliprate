@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ClipRate"
         mc:Ignorable="d" Topmost="True" WindowStyle="SingleBorderWindow" ResizeMode="CanMinimize"
-        Title="ClipRate" Height="160" Width="240">
+        Title="ClipRate" Height="160" Width="240" Icon="pack://application:,,,/Resources/favicon.ico">
   <Window.DataContext>
     <local:ClipRateModel/>
   </Window.DataContext>

@@ -3,7 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32825.248
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClipRate", "ClipRate\ClipRate.csproj", "{F0E998BC-B6AD-4C3C-A3FA-F6D99E9E340D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ClipRate", "ClipRate\ClipRate.csproj", "{F0E998BC-B6AD-4C3C-A3FA-F6D99E9E340D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ClipRateRecorder", "ClipRateRecorder\ClipRateRecorder.csproj", "{078D832C-4C91-42C9-80B3-FCA9E3BAC176}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClipRateRecorder.Test", "ClipRateRecorder.Test\ClipRateRecorder.Test.csproj", "{172D2553-CD87-4B7A-9503-87333E32A673}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +19,14 @@ Global
 		{F0E998BC-B6AD-4C3C-A3FA-F6D99E9E340D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F0E998BC-B6AD-4C3C-A3FA-F6D99E9E340D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F0E998BC-B6AD-4C3C-A3FA-F6D99E9E340D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{078D832C-4C91-42C9-80B3-FCA9E3BAC176}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{078D832C-4C91-42C9-80B3-FCA9E3BAC176}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{078D832C-4C91-42C9-80B3-FCA9E3BAC176}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{078D832C-4C91-42C9-80B3-FCA9E3BAC176}.Release|Any CPU.Build.0 = Release|Any CPU
+		{172D2553-CD87-4B7A-9503-87333E32A673}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{172D2553-CD87-4B7A-9503-87333E32A673}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{172D2553-CD87-4B7A-9503-87333E32A673}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{172D2553-CD87-4B7A-9503-87333E32A673}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

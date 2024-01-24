@@ -2,3 +2,7 @@
 ClipRate/bin/
 ClipRate/obj/
 *.user
+ClipRateRecorder.Test/bin/
+ClipRateRecorder/bin/
+ClipRateRecorder/obj/
+ClipRateRecorder.Test/obj/
