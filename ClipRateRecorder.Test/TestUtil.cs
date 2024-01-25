@@ -74,6 +74,7 @@ namespace ClipRateRecorder.Test
     {
       this.testProcess?.CloseMainWindow();
       this.testProcess?.Close();
+      Task.Delay(500).Wait();
     }
   }
 
@@ -110,11 +111,10 @@ namespace ClipRateRecorder.Test
   internal class StartActivityWatcher : IDisposable
   {
     private CancellationTokenSource cancellation = new();
-    private ActivityWatcher watcher = new();
 
     public StartActivityWatcher()
     {
-      this.watcher.StartWatchLoop(this.cancellation.Token);
+      ActivityWatcher.StartWatchLoop(this.cancellation.Token);
     }
 
     public void Dispose()

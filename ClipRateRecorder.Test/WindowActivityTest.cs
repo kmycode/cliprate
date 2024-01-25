@@ -75,24 +75,24 @@ namespace ClipRateRecorder.Test
 
     // 複数の同じアクティビティ同士のプロセスIDを比較
     [TestMethod]
-    public void CompareSameProcessIdsTest()
+    public void CompareSameExePathTest()
     {
       var activity1 = WindowActivityInspector.GetCurrentActivity();
       Task.Delay(100).Wait();
       var activity2 = WindowActivityInspector.GetCurrentActivity();
 
-      Assert.IsTrue(activity1.IsSameProcess(activity2));
+      Assert.IsTrue(activity1.IsSameWindow(activity2));
     }
 
     // 複数の異なるアクティビティ同士のプロセスIDを比較
     [TestMethod]
-    public void CompareDifferentProcessIdsTest()
+    public void CompareDifferentExePathTest()
     {
       var activity1 = WindowActivityInspector.GetCurrentActivity();
       this.disposables.Add(new LaunchPaintProcess());
       var activity2 = WindowActivityInspector.GetCurrentActivity();
 
-      Assert.IsFalse(activity1.IsSameProcess(activity2));
+      Assert.IsFalse(activity1.IsSameWindow(activity2));
     }
   }
 }

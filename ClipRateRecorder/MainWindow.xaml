@@ -3,10 +3,78 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:scott="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF"
         xmlns:local="clr-namespace:ClipRateRecorder"
+        xmlns:vm="clr-namespace:ClipRateRecorder.ViewModels"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    <Grid>
-
+  <Window.DataContext>
+    <vm:MainViewModel/>
+  </Window.DataContext>
+  <Window.Resources>
+    <Style TargetType="TextBlock" x:Key="Default">
+      <Setter Property="Foreground" Value="White"/>
+    </Style>
+    <Style TargetType="Button">
+      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="Background" Value="Black"/>
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="Padding" Value="8"/>
+      <Setter Property="Margin" Value="0,4"/>
+      <Setter Property="BorderBrush" Value="#999999"/>
+    </Style>
+  </Window.Resources>
+  <Grid Background="Black">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="auto"/>
+      <RowDefinition/>
+    </Grid.RowDefinitions>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="180"/>
+      <ColumnDefinition/>
+    </Grid.ColumnDefinitions>
+    <Grid Grid.ColumnSpan="3">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="40"/>
+        <ColumnDefinition/>
+        <ColumnDefinition Width="40"/>
+      </Grid.ColumnDefinitions>
+      <Button Content="&lt;" FontSize="36"/>
+      <TextBlock Grid.Column="1" Style="{StaticResource Default}" Text="2024/01/31"
+                 TextAlignment="Center" VerticalAlignment="Center" FontSize="30"/>
+      <Button Grid.Column="2" Content=">" FontSize="36"/>
     </Grid>
+    <Grid Grid.Row="1" Grid.Column="1">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition/>
+        <ColumnDefinition Width="240"/>
+      </Grid.ColumnDefinitions>
+      <scott:WpfPlot x:Name="TestPlot"/>
+      <Grid Grid.Column="1">
+        <ItemsControl ScrollViewer.VerticalScrollBarVisibility="Visible" SnapsToDevicePixels="True">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <VirtualizingStackPanel/>
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+        </ItemsControl>
+      </Grid>
+    </Grid>
+
+    <Grid Grid.Row="1" Grid.Column="0">
+      <Grid.RowDefinitions>
+        <RowDefinition/>
+        <RowDefinition Height="auto"/>
+      </Grid.RowDefinitions>
+      <StackPanel>
+        <Button Content="概要"/>
+        <Button Content="アクティビティ"/>
+        <Button Content="目標"/>
+        <Button Content="監視"/>
+      </StackPanel>
+      <StackPanel Grid.Row="1">
+        <Button Content="設定"/>
+      </StackPanel>
+    </Grid>
+  </Grid>
 </Window>

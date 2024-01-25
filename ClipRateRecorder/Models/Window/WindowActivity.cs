@@ -1,15 +1,19 @@
 ﻿using ClipRateRecorder.Models.Db.Entities;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace ClipRateRecorder.Models.Window
 {
-  class WindowActivity
+  class WindowActivity : INotifyPropertyChanged
   {
-    public int ProcessId { get; }
+    private bool isFromData;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     public string Title { get; } = string.Empty;
 
@@ -23,21 +27,46 @@ namespace ClipRateRecorder.Models.Window
 
     public bool IsValid => this.Duration != TimeSpan.Zero;
 
+    public ActivityEvaluation Evaluation
+    {
+      get => this._evaluation;
+      set
+      {
+        if (this._evaluation == value) return;
+        this._evaluation = value;
+        this.OnPropertyChanged();
+      }
+    }
+    private ActivityEvaluation _evaluation;
+
     private WindowActivity()
     {
     }
 
-    private WindowActivity(int processId, string title, string exePath)
+    private WindowActivity(string title, string exePath)
     {
-      this.ProcessId = processId;
       this.Title = title;
-      this.ExePath = exePath;
+      this.ExePath = exePath.ToLower();
       this.StartTime = DateTime.Now;
+    }
+
+    private WindowActivity(WindowActivityData data)
+    {
+      this.Title = data.Title ?? string.Empty;
+      this.ExePath = data.ExePath?.ToLower() ?? string.Empty;
+      this.StartTime = data.StartTime;
+      this.EndTime = data.EndTime;
+      this.isFromData = true;
+    }
+
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+      this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
     public WindowActivityData GenerateData()
     {
-      if (!this.IsValid)
+      if (!this.IsValid || this.isFromData)
       {
         throw new InvalidOperationException();
       }
@@ -45,21 +74,29 @@ namespace ClipRateRecorder.Models.Window
       return new()
       {
         Title = this.Title,
-        ExePath = this.ExePath,
+        ExePath = this.ExePath.ToLower(),
         StartTime = this.StartTime,
         EndTime = this.EndTime,
         DurationSeconds = (float)this.Duration.TotalSeconds,
       };
     }
 
+    public static WindowActivity FromData(WindowActivityData data)
+    {
+      return new(data);
+    }
+
     public void Stop()
     {
       this.EndTime = DateTime.Now;
+      this.OnPropertyChanged(nameof(EndTime));
+      this.OnPropertyChanged(nameof(Duration));
+      this.OnPropertyChanged(nameof(IsValid));
     }
 
-    public bool IsSameProcess(WindowActivity other) => this.ProcessId == other.ProcessId;
+    public bool IsSameWindow(WindowActivity other) => this.ExePath == other.ExePath && this.Title == other.Title;
 
-    public static WindowActivity CreateRecord(int processId, string title, string exePath)
-      => new(processId, title, exePath);
+    public static WindowActivity CreateRecord(string title, string exePath)
+      => new(title, exePath);
   }
 }

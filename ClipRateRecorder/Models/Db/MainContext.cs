@@ -16,6 +16,8 @@ namespace ClipRateRecorder.Models.Db
 
     public DbSet<WindowActivityData>? WindowActivities { get; set; }
 
+    public DbSet<ActivityEvaluationRuleData>? ActivityEvaluationRules { get; set; }
+
     public MainContext() : this(".\\clipraterecorder.db")
     {
     }

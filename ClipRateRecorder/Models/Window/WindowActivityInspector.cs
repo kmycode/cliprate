@@ -12,7 +12,6 @@ namespace ClipRateRecorder.Models.Window
   {
     public static WindowActivity GetCurrentActivity()
       => WindowActivity.CreateRecord(
-        GetActiveWindowProcess()?.Id ?? default,
         GetActiveWindowTitle() ?? string.Empty,
         GetActiveWindowExePath() ?? string.Empty);
 
