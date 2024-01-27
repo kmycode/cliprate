@@ -1,7 +1,9 @@
-﻿using ClipRateRecorder.Models.Db.Entities;
+﻿using ClipRateRecorder.Models.Analysis.Rules;
+using ClipRateRecorder.Models.Db.Entities;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -19,18 +21,22 @@ namespace ClipRateRecorder.Models.Window
 
     public string ExePath { get; } = string.Empty;
 
+    public string ExeFileName { get; } = string.Empty;
+
     public DateTime StartTime { get; }
 
     public DateTime EndTime { get; private set; }
 
-    public TimeSpan Duration => this.EndTime > this.StartTime ? this.EndTime - this.StartTime : TimeSpan.Zero;
+    public TimeSpan Duration { get; private set; }
+
+    public TimeSpan ProperDuration => this.EndTime > this.StartTime ? this.Duration : DateTime.Now - this.StartTime;
 
     public bool IsValid => this.Duration != TimeSpan.Zero;
 
     public ActivityEvaluation Evaluation
     {
       get => this._evaluation;
-      set
+      private set
       {
         if (this._evaluation == value) return;
         this._evaluation = value;
@@ -38,6 +44,28 @@ namespace ClipRateRecorder.Models.Window
       }
     }
     private ActivityEvaluation _evaluation;
+
+    public ActivityEvaluationRule? Rule
+    {
+      get => this._rule;
+      set
+      {
+        if (value == null)
+        {
+          this.Evaluation = ActivityEvaluation.Normal;
+        }
+        else
+        {
+          this.Evaluation = value.Evaluate(this);
+        }
+
+        if (this._rule == value) return;
+
+        this._rule = value;
+        this.OnPropertyChanged();
+      }
+    }
+    private ActivityEvaluationRule? _rule;
 
     private WindowActivity()
     {
@@ -47,6 +75,7 @@ namespace ClipRateRecorder.Models.Window
     {
       this.Title = title;
       this.ExePath = exePath.ToLower();
+      this.ExeFileName = Path.GetFileName(this.ExePath);
       this.StartTime = DateTime.Now;
     }
 
@@ -54,8 +83,13 @@ namespace ClipRateRecorder.Models.Window
     {
       this.Title = data.Title ?? string.Empty;
       this.ExePath = data.ExePath?.ToLower() ?? string.Empty;
+      this.ExeFileName = Path.GetFileName(this.ExePath);
       this.StartTime = data.StartTime;
       this.EndTime = data.EndTime;
+      if (this.EndTime > this.StartTime)
+      {
+        this.Duration = this.EndTime - this.StartTime;
+      }
       this.isFromData = true;
     }
 
@@ -89,6 +123,7 @@ namespace ClipRateRecorder.Models.Window
     public void Stop()
     {
       this.EndTime = DateTime.Now;
+      this.Duration = this.EndTime > this.StartTime ? this.EndTime - this.StartTime : TimeSpan.Zero;
       this.OnPropertyChanged(nameof(EndTime));
       this.OnPropertyChanged(nameof(Duration));
       this.OnPropertyChanged(nameof(IsValid));

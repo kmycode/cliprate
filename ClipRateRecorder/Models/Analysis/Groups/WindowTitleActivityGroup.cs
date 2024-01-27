@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -49,9 +50,24 @@ namespace ClipRateRecorder.Models.Analysis.Groups
 
     public string Title { get; }
 
-    public double TotalDuration => this.Activities.Any() ? this.Activities.Sum(a => a.Duration.TotalSeconds) : 0;
+    public double TotalDuration => this.Activities.Any() ? this.Activities.Sum(a => a.ProperDuration.TotalSeconds) : 0;
 
     public ActivityStatistics Statistics { get; private set; } = ActivityStatistics.Empty;
+
+    public ActivityEvaluationRule? Rule
+    {
+      get => this._rule;
+      set
+      {
+        if (this._rule == value) return;
+        this._rule = value;
+        this.OnPropertyChanged();
+        this.OnPropertyChanged(nameof(this.CanSetEvaluation));
+      }
+    }
+    private ActivityEvaluationRule? _rule;
+
+    public bool CanSetEvaluation => this.Rule != null;
 
     public WindowTitleActivityGroup(string title)
     {
@@ -60,11 +76,16 @@ namespace ClipRateRecorder.Models.Analysis.Groups
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+      this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
     public void UpdateStatistics()
     {
       this.Statistics = new(this.Activities);
 
-      this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Statistics)));
+      this.OnPropertyChanged(nameof(this.Statistics));
     }
 
     public void AddActivity(WindowActivity activity)
@@ -78,6 +99,7 @@ namespace ClipRateRecorder.Models.Analysis.Groups
       {
         return false;
       }
+
       this.UpdateStatistics();
 
       this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TotalDuration)));

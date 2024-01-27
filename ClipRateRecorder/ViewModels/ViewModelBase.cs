@@ -21,5 +21,10 @@ namespace ClipRateRecorder.ViewModels
     {
       this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
+
+    protected void RaisePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+      this.OnPropertyChanged(e.PropertyName);
+    }
   }
 }

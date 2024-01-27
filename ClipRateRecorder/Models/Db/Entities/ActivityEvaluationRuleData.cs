@@ -12,27 +12,19 @@ namespace ClipRateRecorder.Models.Db.Entities
 
     public int Order { get; set; }
 
-    public string ExePathes { get; set; } = string.Empty;
+    public string ExePath { get; set; } = string.Empty;
 
-    public string Titles { get; set; } = string.Empty;
-
-    public PropertiesMatchRule MatchRule { get; set; }
+    public string Title { get; set; } = string.Empty;
 
     public ActivityEvaluation Evaluation { get; set; }
   }
 
-  public enum PropertiesMatchRule : int
-  {
-    Or = 0,
-    And = 1,
-  }
-
   public enum ActivityEvaluation : int
   {
-    MostIneffective = 0,
-    Ineffective = 1,
-    Normal = 2,
-    Effective = 3,
-    MostEffective = 4,
+    MostIneffective = -2,
+    Ineffective = -1,
+    Normal = 0,
+    Effective = 1,
+    MostEffective = 2,
   }
 }

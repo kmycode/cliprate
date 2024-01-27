@@ -3,15 +3,20 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
         xmlns:scott="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF"
         xmlns:local="clr-namespace:ClipRateRecorder"
         xmlns:vm="clr-namespace:ClipRateRecorder.ViewModels"
+        xmlns:cv="clr-namespace:ClipRateRecorder.Converters"
+        xmlns:b="clr-namespace:ClipRateRecorder.Behaviors"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
   <Window.DataContext>
     <vm:MainViewModel/>
   </Window.DataContext>
   <Window.Resources>
+    <cv:ActivityEvaluation2BooleanConverter x:Key="ActivityEvaluation2BooleanConv"/>
+    <cv:ActivityEvaluation2BrushConverter x:Key="ActivityEvaluation2BrushConv"/>
     <Style TargetType="TextBlock" x:Key="Default">
       <Setter Property="Foreground" Value="White"/>
     </Style>
@@ -22,6 +27,35 @@
       <Setter Property="Padding" Value="8"/>
       <Setter Property="Margin" Value="0,4"/>
       <Setter Property="BorderBrush" Value="#999999"/>
+    </Style>
+    <Style TargetType="ToggleButton" x:Key="DefaultToggleButton">
+      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="Background" Value="Black"/>
+      <Setter Property="BorderBrush" Value="#999999"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
+      <Setter Property="Padding" Value="8,2"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ToggleButton">
+            <Border Name="HoverButtonBorder" BorderThickness="2" BorderBrush="{TemplateBinding BorderBrush}" Background="{TemplateBinding Background}">
+              <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                Margin="{TemplateBinding Padding}"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="HoverButtonBorder" Property="Background" Value="#444444" />
+              </Trigger>
+              <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="HoverButtonBorder" Property="Background" Value="#999999" />
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Background" Value="#222222" />
+                <Setter Property="Foreground" Value="#888888" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
     </Style>
   </Window.Resources>
   <Grid Background="Black">
@@ -49,14 +83,72 @@
         <ColumnDefinition/>
         <ColumnDefinition Width="240"/>
       </Grid.ColumnDefinitions>
-      <scott:WpfPlot x:Name="TestPlot"/>
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="auto"/>
+          <RowDefinition/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="{Binding Range.Statistics.Score,StringFormat=0.00}" Style="{StaticResource Default}"
+                   FontSize="48" TextAlignment="Center"/>
+        <scott:WpfPlot Grid.Row="1" x:Name="TestPlot"/>
+      </Grid>
       <Grid Grid.Column="1">
-        <ItemsControl ScrollViewer.VerticalScrollBarVisibility="Visible" SnapsToDevicePixels="True">
+        <ItemsControl ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True"
+                      ItemsSource="{Binding Range.ActivityGroups}">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>
               <VirtualizingStackPanel/>
             </ItemsPanelTemplate>
           </ItemsControl.ItemsPanel>
+          <ItemsControl.Template>
+            <ControlTemplate>
+              <ScrollViewer Padding="{TemplateBinding Control.Padding}" Focusable="False">
+                <ItemsPresenter SnapsToDevicePixels="{TemplateBinding UIElement.SnapsToDevicePixels}" />
+              </ScrollViewer>
+            </ControlTemplate>
+          </ItemsControl.Template>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="auto"/>
+                  <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <Border Width="12" Background="{Binding Rule.Evaluation,Converter={StaticResource ActivityEvaluation2BrushConv}}"/>
+                <ToggleButton x:Name="ItemButton" Style="{StaticResource DefaultToggleButton}"
+                              Grid.Column="1">
+                  <ToggleButton.ContextMenu>
+                    <ContextMenu Placement="Bottom">
+                      <MenuItem Header="非常に効率的" IsCheckable="True"
+                                IsChecked="{Binding Rule.Evaluation,Mode=OneWay,Converter={StaticResource ActivityEvaluation2BooleanConv},ConverterParameter=MostEffective}"
+                                Command="{Binding SetDefaultEvaluationCommand}" CommandParameter="MostEffective"/>
+                      <MenuItem Header="効率的" IsCheckable="True"
+                                IsChecked="{Binding Rule.Evaluation,Mode=OneWay,Converter={StaticResource ActivityEvaluation2BooleanConv},ConverterParameter=Effective}"
+                                Command="{Binding SetDefaultEvaluationCommand}" CommandParameter="Effective"/>
+                      <MenuItem Header="普通" IsCheckable="True"
+                                IsChecked="{Binding Rule.Evaluation,Mode=OneWay,Converter={StaticResource ActivityEvaluation2BooleanConv},ConverterParameter=Normal}"
+                                Command="{Binding SetDefaultEvaluationCommand}" CommandParameter="Normal"/>
+                      <MenuItem Header="非効率的" IsCheckable="True"
+                                IsChecked="{Binding Rule.Evaluation,Mode=OneWay,Converter={StaticResource ActivityEvaluation2BooleanConv},ConverterParameter=Ineffective}"
+                                Command="{Binding SetDefaultEvaluationCommand}" CommandParameter="Ineffective"/>
+                      <MenuItem Header="非常に非効率的" IsCheckable="True"
+                                IsChecked="{Binding Rule.Evaluation,Mode=OneWay,Converter={StaticResource ActivityEvaluation2BooleanConv},ConverterParameter=MostIneffective}"
+                                Command="{Binding SetDefaultEvaluationCommand}" CommandParameter="MostIneffective"/>
+                      <Separator/>
+                      <MenuItem Header="詳細" IsEnabled="False"/>
+                    </ContextMenu>
+                  </ToggleButton.ContextMenu>
+                  <StackPanel>
+                    <TextBlock Text="{Binding ExeFileName}" Style="{StaticResource Default}" FontSize="18"/>
+                    <TextBlock Text="{Binding TotalDuration,StringFormat=0.0}" Style="{StaticResource Default}" Foreground="White"/>
+                  </StackPanel>
+                  <i:Interaction.Behaviors>
+                    <b:DropdownContextMenuBehavior/>
+                  </i:Interaction.Behaviors>
+                </ToggleButton>
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
         </ItemsControl>
       </Grid>
     </Grid>
@@ -66,14 +158,21 @@
         <RowDefinition/>
         <RowDefinition Height="auto"/>
       </Grid.RowDefinitions>
+      <Grid.Resources>
+        <Style TargetType="ToggleButton" BasedOn="{StaticResource DefaultToggleButton}">
+          <Setter Property="HorizontalContentAlignment" Value="Center"/>
+          <Setter Property="FontSize" Value="20"/>
+          <Setter Property="Padding" Value="0,8"/>
+        </Style>
+      </Grid.Resources>
       <StackPanel>
-        <Button Content="概要"/>
-        <Button Content="アクティビティ"/>
-        <Button Content="目標"/>
-        <Button Content="監視"/>
+        <ToggleButton Content="概要" IsChecked="True"/>
+        <ToggleButton Content="アクティビティ" IsEnabled="False"/>
+        <ToggleButton Content="目標" IsEnabled="False"/>
+        <ToggleButton Content="監視" IsEnabled="False"/>
       </StackPanel>
       <StackPanel Grid.Row="1">
-        <Button Content="設定"/>
+        <ToggleButton Content="設定" IsEnabled="False"/>
       </StackPanel>
     </Grid>
   </Grid>

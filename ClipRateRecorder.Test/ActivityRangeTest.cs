@@ -39,7 +39,7 @@ namespace ClipRateRecorder.Test
       });
       db.SaveChanges();
 
-      var range = ActivityRange.RangeOfDay(new DateTime(2024, 1, 15)).Result;
+      var range = ActivityRange.RangeOfDayAsync(new DateTime(2024, 1, 15)).Result;
 
       Assert.AreEqual(range.ActivityGroups.Count, 1);
       Assert.AreEqual(range.ActivityGroups.TotalDuration, 3600);
@@ -58,7 +58,7 @@ namespace ClipRateRecorder.Test
       });
       db.SaveChanges();
 
-      var range = ActivityRange.RangeOfDay(new DateTime(2024, 1, 16)).Result;
+      var range = ActivityRange.RangeOfDayAsync(new DateTime(2024, 1, 16)).Result;
 
       Assert.AreEqual(range.ActivityGroups.Count, 0);
       Assert.AreEqual(range.ActivityGroups.TotalDuration, 0);

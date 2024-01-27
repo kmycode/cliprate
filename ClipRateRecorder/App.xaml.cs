@@ -1,4 +1,5 @@
 ﻿using ClipRateRecorder.Models.Db;
+using ClipRateRecorder.Utils;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -17,6 +18,8 @@ namespace ClipRateRecorder
     public App()
     {
       MainContext.Initialize();
+
+      ThreadUtil.Dispatcher = this.Dispatcher;
     }
   }
 }

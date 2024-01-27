@@ -1,10 +1,16 @@
 ﻿using ClipRateRecorder.Models.Analysis.Rules;
+using ClipRateRecorder.Models.Db;
+using ClipRateRecorder.Models.Db.Entities;
 using ClipRateRecorder.Models.Watching;
 using ClipRateRecorder.Models.Window;
+using ClipRateRecorder.Utils;
+using Microsoft.EntityFrameworkCore;
+using Reactive.Bindings;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -18,6 +24,12 @@ namespace ClipRateRecorder.Models.Analysis.Groups
 
     private IEnumerable<WindowActivity> Activities => this.SelectMany(a => a.WindowTitleGroups.SelectMany(b => b.Activities));
 
+    private IEnumerable<ActivityStatistics> AllStatistics => this.Select(a => a.Statistics);
+
+    public ActivityStatistics Statistics { get; private set; } = ActivityStatistics.Empty;
+
+    public event EventHandler? StatisticsChanged;
+
     public ActivityEvaluator? Evaluator
     {
       get => this._evaluator;
@@ -27,14 +39,21 @@ namespace ClipRateRecorder.Models.Analysis.Groups
         {
           this._evaluator = value;
           this.Evaluate();
+          this.InitializeEvalucator();
         }
       }
     }
     private ActivityEvaluator? _evaluator;
 
-    public void OnWindowActivityTicked(object sender, WatchingTickEventArgs e)
+    public void OnWindowActivityTicked(object? sender, WatchingTickEventArgs e)
     {
       var activity = e.CurrentActivity;
+
+      ThreadUtil.RunGuiThread(() => this.OnWindowActivityTicked(activity));
+    }
+
+    private void OnWindowActivityTicked(WindowActivity activity)
+    {
       this.Evaluator?.Evaluate(activity);
 
       var exePathes = this.Where(a => a.ExePath == activity.ExePath);
@@ -42,7 +61,12 @@ namespace ClipRateRecorder.Models.Analysis.Groups
       {
         if (!exePathes.Any())
         {
-          this.Add(ExePathActivityGroup.FromActivity(activity));
+          var group = ExePathActivityGroup.FromActivity(activity);
+          this.Add(group);
+          if (this.Evaluator != null)
+          {
+            group.Rule = this.Evaluator.RequestRule(activity.ExePath);
+          }
         }
         else
         {
@@ -52,11 +76,22 @@ namespace ClipRateRecorder.Models.Analysis.Groups
             var group = new WindowTitleActivityGroup(activity.Title);
             group.AddActivity(activity);
             exePathes.Last().WindowTitleGroups.Add(group);
+            if (this.Evaluator != null)
+            {
+              group.Rule = this.Evaluator.RequestRule(activity.ExePath, activity.Title);
+            }
+          }
+          else
+          {
+            titles.Last().Activities.Add(activity);
           }
         }
 
         this.FireIfActivityUpdated(activity);
       }
+
+      this.Reorder();
+      this.UpdateStatistics();
     }
 
     public bool FireIfActivityUpdated(WindowActivity activity)
@@ -70,16 +105,55 @@ namespace ClipRateRecorder.Models.Analysis.Groups
       return true;
     }
 
+    private void InitializeEvalucator()
+    {
+      if (this.Evaluator == null)
+      {
+        return;
+      }
+
+      foreach (var exePath in this)
+      {
+        exePath.Rule = this.Evaluator.RequestRule(exePath.ExePath);
+
+        foreach (var title in exePath.WindowTitleGroups)
+        {
+          title.Rule = this.Evaluator.RequestRule(exePath.ExePath, title.Title);
+        }
+      }
+    }
+
     public void Evaluate()
     {
       this.Evaluator?.Evaluate(this.Activities);
     }
 
-    public void UpdateStatistics()
+    private void UpdateStatistics()
     {
       foreach (var item in this)
       {
         item.UpdateStatistics();
+      }
+
+      this.Statistics = new(this.AllStatistics);
+      this.StatisticsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void Reorder()
+    {
+      var copy = this.ToList();
+      var ordered = copy.OrderByDescending(c => c.TotalDuration).ToList();
+
+      for (var i = 0; i < copy.Count; i++)
+      {
+        var item = this[i];
+        var currentIndex = i;
+        var actualIndex = ordered.IndexOf(item);
+
+        if (currentIndex >= 0 && actualIndex >= 0 && currentIndex != actualIndex)
+        {
+          this.MoveItem(currentIndex, actualIndex);
+        }
       }
     }
 
@@ -111,6 +185,8 @@ namespace ClipRateRecorder.Models.Analysis.Groups
         exePathGroups.Add(exePathGroup);
       }
 
+      exePathGroups.Reorder();
+
       return exePathGroups;
     }
   }
@@ -121,26 +197,48 @@ namespace ClipRateRecorder.Models.Analysis.Groups
 
     public string ExePath { get; }
 
+    public string ExeFileName { get; }
+
     public double TotalDuration => this.WindowTitleGroups.TotalDuration;
 
     private IEnumerable<WindowActivity> Activities => this.WindowTitleGroups.SelectMany(a => a.Activities);
 
+    private IEnumerable<ActivityStatistics> AllStatistics => this.WindowTitleGroups.Select(a => a.Statistics);
+
     public ActivityStatistics Statistics { get; private set; } = ActivityStatistics.Empty;
+
+    public ActivityEvaluationRule? Rule
+    {
+      get => this._rule;
+      set
+      {
+        if (this._rule == value) return;
+        this._rule = value;
+        this.OnPropertyChanged();
+      }
+    }
+    private ActivityEvaluationRule? _rule;
 
     public ExePathActivityGroup(string exePath)
     {
       this.ExePath = exePath;
+      this.ExeFileName = Path.GetFileName(this.ExePath);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+      this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
 
     public void UpdateStatistics()
     {
       this.WindowTitleGroups.UpdateStatistics();
 
-      this.Statistics = new(this.Activities);
+      this.Statistics = new(this.AllStatistics);
 
-      this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Statistics)));
+      this.OnPropertyChanged(nameof(this.Statistics));
     }
 
     public bool FireIfActivityUpdated(WindowActivity activity)
@@ -151,6 +249,8 @@ namespace ClipRateRecorder.Models.Analysis.Groups
       }
 
       this.UpdateStatistics();
+
+      this.OnPropertyChanged(nameof(TotalDuration));
       return true;
     }
 
@@ -164,5 +264,40 @@ namespace ClipRateRecorder.Models.Analysis.Groups
 
       return exePathGroup;
     }
+
+    private void UpdateEvalucations()
+    {
+      foreach (var activity in this.Activities.Where(a => a.Rule == this.Rule))
+      {
+        activity.Rule = this.Rule;
+      }
+    }
+
+    public ReactiveCommand<string> SetDefaultEvaluationCommand =>
+      this._evaluateExePathActivityGroupCommand ??= new ReactiveCommand<string>()
+        .WithSubscribe(async (ev) =>
+        {
+          if (this.Rule != null)
+          {
+            var evaluation = ev switch
+            {
+              nameof(ActivityEvaluation.MostIneffective) => ActivityEvaluation.MostIneffective,
+              nameof(ActivityEvaluation.Ineffective) => ActivityEvaluation.Ineffective,
+              nameof(ActivityEvaluation.Effective) => ActivityEvaluation.Effective,
+              nameof(ActivityEvaluation.MostEffective) => ActivityEvaluation.MostEffective,
+              _ => ActivityEvaluation.Normal,
+            };
+            if (evaluation != this.Rule.Evaluation)
+            {
+              this.Rule.Evaluation = evaluation;
+
+              using var db = new MainContext();
+              await this.Rule.SaveDataAsync(db);
+
+              this.UpdateEvalucations();
+            }
+          }
+        });
+    private ReactiveCommand<string> _evaluateExePathActivityGroupCommand;
   }
 }

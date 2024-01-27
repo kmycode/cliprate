@@ -46,16 +46,7 @@ namespace ClipRateRecorder
       double[] values = { 26, 20, 23, 7, 16 };
 
       // add a bar graph to the plot
-      plt.Add.Bar(1, 26);
-      plt.Add.Bar(2, 20);
-      plt.Add.Bar(3, 23);
-      plt.Add.Bar(4, 7);
-      plt.Add.Bar(5, 16);
-
-      plt.Axes.Bottom.FrameLineStyle.Color = ScottPlot.Colors.White;
-      plt.Axes.Bottom.TickLabelStyle.ForeColor = ScottPlot.Colors.White;
-      plt.Axes.Left.FrameLineStyle.Color = ScottPlot.Colors.White;
-      plt.Axes.Left.TickLabelStyle.ForeColor = ScottPlot.Colors.White;
+      plt.Add.Pie(values);
 
       plt.DataBackground = ScottPlot.Colors.Black;
       plt.FigureBackground = ScottPlot.Colors.Black;

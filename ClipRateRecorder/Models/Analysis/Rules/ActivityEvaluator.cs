@@ -38,15 +38,29 @@ namespace ClipRateRecorder.Models.Analysis.Rules
         return;
       }
 
-      var matchRules = this.Rules.Where(r => r.Match(activity)).ToArray();
-      if (!matchRules.Any())
+      activity.Rule = this.RequestRule(activity.ExePath, activity.Title);
+    }
+
+    public ActivityEvaluationRule RequestRule(string exePath, string? title = null)
+    {
+      var exePathRules = this.Rules.Where(r => r.ExePath == exePath).ToList();
+
+      var rule = exePathRules.FirstOrDefault(r => string.IsNullOrEmpty(title) || r.WindowTitle == title) ??
+                 exePathRules.FirstOrDefault(r => string.IsNullOrEmpty(r.WindowTitle));
+
+      if (rule == null)
       {
-        activity.Evaluation = ActivityEvaluation.Normal;
+        var data = new ActivityEvaluationRuleData
+        {
+          ExePath = exePath,
+          Title = title ?? string.Empty,
+        };
+
+        rule = new(data);
+        this.Rules.Add(rule);
       }
-      else
-      {
-        activity.Evaluation = matchRules.OrderBy(r => r.Order).First().Evaluation;
-      }
+
+      return rule;
     }
 
     public static async Task<ActivityEvaluator> CreateFromDatabaseAsync(MainContext db)
@@ -63,64 +77,13 @@ namespace ClipRateRecorder.Models.Analysis.Rules
     }
   }
 
-  class ActivityStatistics
-  {
-    public static ActivityStatistics Empty { get; } = new();
-
-    public double TotalDuration { get; }
-
-    public double MostIneffective { get; }
-
-    public double Ineffective { get; }
-
-    public double Normal { get; }
-
-    public double Effective { get; }
-
-    public double MostEffective { get; }
-
-    public ActivityEvaluation Evaluation { get; }
-
-    private ActivityStatistics() { }
-
-    public ActivityStatistics(IEnumerable<WindowActivity> activities)
-    {
-      double GetValue(IEnumerable<WindowActivity> targets)
-      {
-        if (!targets.Any())
-        {
-          return 0;
-        }
-
-        return targets.Sum(a => a.Duration.TotalSeconds);
-      }
-
-      this.MostIneffective = GetValue(activities.Where(a => a.Evaluation == ActivityEvaluation.MostIneffective));
-      this.Ineffective = GetValue(activities.Where(a => a.Evaluation == ActivityEvaluation.Ineffective));
-      this.Normal = GetValue(activities.Where(a => a.Evaluation == ActivityEvaluation.Normal));
-      this.Effective = GetValue(activities.Where(a => a.Evaluation == ActivityEvaluation.Effective));
-      this.MostEffective = GetValue(activities.Where(a => a.Evaluation == ActivityEvaluation.MostEffective));
-      this.TotalDuration = this.MostIneffective + this.Ineffective + this.Normal + this.Effective + this.MostEffective;
-
-      var data = new List<(double, ActivityEvaluation)>
-      {
-        (this.MostIneffective, ActivityEvaluation.MostIneffective),
-        (this.Ineffective, ActivityEvaluation.Ineffective),
-        (this.Normal, ActivityEvaluation.Normal),
-        (this.Effective, ActivityEvaluation.Effective),
-        (this.MostEffective, ActivityEvaluation.MostEffective),
-      };
-      this.Evaluation = data.OrderByDescending(d => d.Item1).First().Item2;
-    }
-  }
-
   class ActivityEvaluationRule : INotifyPropertyChanged
   {
     private ActivityEvaluationRuleData? Data { get; set; }
 
-    public ObservableCollection<string> WindowTitles { get; } = [];
+    public string WindowTitle { get; set; } = string.Empty;
 
-    public ObservableCollection<string> ExePathes { get; } = [];
+    public string ExePath { get; set; } = string.Empty;
 
     public int Order
     {
@@ -133,18 +96,6 @@ namespace ClipRateRecorder.Models.Analysis.Rules
       }
     }
     private int _order;
-
-    public PropertiesMatchRule MatchRule
-    {
-      get => this._matchRule;
-      set
-      {
-        if (this._matchRule == value) return;
-        this._matchRule = value;
-        this.OnPropertyChanged();
-      }
-    }
-    private PropertiesMatchRule _matchRule;
 
     public ActivityEvaluation Evaluation
     {
@@ -176,9 +127,8 @@ namespace ClipRateRecorder.Models.Analysis.Rules
       {
         return;
       }
-      foreach (var item in this.Data.Titles.Split("\n")) this.WindowTitles.Add(item);
-      foreach (var item in this.Data.ExePathes.Split("\n")) this.ExePathes.Add(item);
-      this.MatchRule = this.Data.MatchRule;
+      this.WindowTitle = this.Data.Title;
+      this.ExePath = this.Data.ExePath;
       this.Evaluation = this.Data.Evaluation;
     }
 
@@ -188,39 +138,55 @@ namespace ClipRateRecorder.Models.Analysis.Rules
       {
         return;
       }
-      this.Data.Titles = string.Join("\n", this.WindowTitles);
-      this.Data.ExePathes = string.Join("\n", this.ExePathes);
-      this.Data.MatchRule = this.MatchRule;
+      this.Data.Title = this.WindowTitle;
+      this.Data.ExePath = this.ExePath;
       this.Data.Evaluation = this.Evaluation;
     }
 
-    public async Task InputDataAsync(MainContext db)
+    public async Task SaveDataAsync(MainContext db)
     {
-      if (this.Data == null)
+      var isRemove = false;
+
+      if (this.Data == null || this.Data.Id == default)
       {
-        this.Data = new();
-        this.SetData();
-        await db.ActivityEvaluationRules!.AddAsync(this.Data);
+        if (this.Evaluation != ActivityEvaluation.Normal)
+        {
+          this.Data ??= new();
+          this.SetData();
+          await db.ActivityEvaluationRules!.AddAsync(this.Data);
+        }
+        else
+        {
+          return;
+        }
       }
       else
       {
-        this.SetData();
+        db.ActivityEvaluationRules!.Attach(this.Data);
+
+        if (this.Evaluation != ActivityEvaluation.Normal)
+        {
+          this.SetData();
+          await db.SaveChangesAsync();
+        }
+        else
+        {
+          db.ActivityEvaluationRules!.Remove(this.Data);
+          isRemove = true;
+        }
+      }
+
+      await db.SaveChangesAsync();
+      
+      if (isRemove)
+      {
+        this.Data.Id = default;
       }
     }
 
     public bool Match(WindowActivity activity)
     {
-      var exePathes = this.ExePathes.Any(activity.ExePath.Contains);
-      var titles = this.WindowTitles.Any(activity.Title.Contains);
-
-      var isApply = this.MatchRule switch
-      {
-        PropertiesMatchRule.Or => exePathes || titles,
-        PropertiesMatchRule.And => exePathes && titles,
-        _ => false,
-      };
-
-      return isApply;
+      return this.ExePath == activity.ExePath && (string.IsNullOrEmpty(this.WindowTitle) || this.WindowTitle == activity.Title);
     }
 
     public ActivityEvaluation Evaluate(WindowActivity activity)
