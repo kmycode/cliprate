@@ -76,5 +76,26 @@ namespace ClipRateRecorder.Models.Logics
         Thread.Sleep(500);
       }
     }
+
+    internal void ResetSpot()
+    {
+      if (this.SpotRange == null)
+      {
+        return;
+      }
+
+      this.loop.Ticked -= this.SpotRange.ActivityGroups.OnWindowActivityTicked;
+
+      Task.Run(async () =>
+      {
+        using var db = new MainContext();
+        var evalucator = this.SpotRange.ActivityGroups.Evaluator;
+
+        var spotRange = await ActivityRange.RangeOfEmptyAsync(evalucator);
+        ThreadUtil.RunGuiThread(() => this.SpotRange = spotRange);
+
+        this.loop.Ticked += spotRange.ActivityGroups.OnWindowActivityTicked;
+      });
+    }
   }
 }

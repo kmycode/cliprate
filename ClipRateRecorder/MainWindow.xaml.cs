@@ -43,13 +43,10 @@ namespace ClipRateRecorder
       var plt = TestPlot.Plot;
 
       // create sample data
-      double[] values = { 26, 20, 23, 7, 16 };
+      double[] values = { 0 };
 
       // add a bar graph to the plot
       plt.Add.Pie(values);
-
-      plt.DataBackground = ScottPlot.Colors.Black;
-      plt.FigureBackground = ScottPlot.Colors.Black;
 
       TestPlot.Refresh();
     }

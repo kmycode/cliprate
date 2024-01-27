@@ -45,15 +45,22 @@ namespace ClipRateRecorder.Models.Analysis.Rules
     {
       var exePathRules = this.Rules.Where(r => r.ExePath == exePath).ToList();
 
-      var rule = exePathRules.FirstOrDefault(r => string.IsNullOrEmpty(title) || r.WindowTitle == title) ??
-                 exePathRules.FirstOrDefault(r => string.IsNullOrEmpty(r.WindowTitle));
+      ActivityEvaluationRule? rule = null;
+      if (!string.IsNullOrEmpty(title))
+      {
+        rule = exePathRules.FirstOrDefault(r => r.WindowTitle == title);
+      }
+      if (rule == null)
+      {
+        rule = exePathRules.FirstOrDefault(r => string.IsNullOrEmpty(r.WindowTitle));
+      }
 
       if (rule == null)
       {
         var data = new ActivityEvaluationRuleData
         {
           ExePath = exePath,
-          Title = title ?? string.Empty,
+          Title = exePathRules.Count == 0 ? string.Empty : title ?? string.Empty,
         };
 
         rule = new(data);

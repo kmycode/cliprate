@@ -26,6 +26,8 @@ namespace ClipRateRecorder.Models.Analysis.Rules
 
     public double Score { get; }
 
+    public IEnumerable<double> Values => new double[] { this.MostEffective, this.Effective, this.Normal, this.Ineffective, this.MostIneffective, };
+
     public ActivityEvaluation Evaluation { get; }
 
     private ActivityStatistics() { }

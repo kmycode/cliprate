@@ -17,6 +17,7 @@
   <Window.Resources>
     <cv:ActivityEvaluation2BooleanConverter x:Key="ActivityEvaluation2BooleanConv"/>
     <cv:ActivityEvaluation2BrushConverter x:Key="ActivityEvaluation2BrushConv"/>
+    <cv:Boolean2VisibilityConverter x:Key="Boolean2VisibilityConv"/>
     <cv:NegativeConverter x:Key="NegativeConv"/>
     <Style TargetType="TextBlock" x:Key="Default">
       <Setter Property="Foreground" Value="White"/>
@@ -78,9 +79,21 @@
           <RowDefinition Height="auto"/>
           <RowDefinition/>
         </Grid.RowDefinitions>
-        <TextBlock Text="{Binding Range.Statistics.Score,StringFormat=0.00}" Style="{StaticResource Default}"
-                   FontSize="48" TextAlignment="Center"/>
-        <scott:WpfPlot Grid.Row="1" x:Name="TestPlot"/>
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="auto"/>
+          </Grid.ColumnDefinitions>
+          <TextBlock Text="{Binding Range.Statistics.Score,StringFormat=0.00}" Style="{StaticResource Default}"
+                     FontSize="48" TextAlignment="Center"/>
+          <Button Visibility="{Binding IsSpot,Converter={StaticResource Boolean2VisibilityConv}}"
+                  Grid.Column="1" Content="Reset" Command="{Binding ResetSpotCommand}"/>
+        </Grid>
+        <scott:WpfPlot Grid.Row="1" x:Name="TestPlot">
+          <i:Interaction.Behaviors>
+            <b:PiePlotBehavior Values="{Binding Range.Statistics.Values}"/>
+          </i:Interaction.Behaviors>
+        </scott:WpfPlot>
       </Grid>
       <Grid Grid.Column="1">
         <ItemsControl ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True"
@@ -163,7 +176,7 @@
             <ColumnDefinition Width="30"/>
           </Grid.ColumnDefinitions>
           <Button Content="&lt;" FontSize="16"/>
-          <TextBlock Grid.Column="1" Style="{StaticResource Default}" Text="2024/01/31"
+          <TextBlock Grid.Column="1" Style="{StaticResource Default}" Text="{Binding Today,StringFormat=yyyy/MM/dd}"
                  TextAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
           <Button Grid.Column="2" Content=">" FontSize="16"/>
         </Grid>

@@ -21,6 +21,8 @@ namespace ClipRateRecorder.ViewModels
 
     public ActivityRange? Range => this.IsSpot ? this.mainWatcherModel.SpotRange : this.mainWatcherModel.Range;
 
+    public DateTime Today => DateTime.Today;
+
     public bool IsSpot
     {
       get => this._isSpot;
@@ -42,5 +44,12 @@ namespace ClipRateRecorder.ViewModels
     {
       this.mainWatcherModel.Dispose();
     }
+
+    public ReactiveCommand ResetSpotCommand =>
+      this._resetSpotCommand ??= new ReactiveCommand().WithSubscribe(() => {
+        this.mainWatcherModel.ResetSpot();
+        this.OnPropertyChanged(nameof(Range));
+        });
+    private ReactiveCommand _resetSpotCommand;
   }
 }
