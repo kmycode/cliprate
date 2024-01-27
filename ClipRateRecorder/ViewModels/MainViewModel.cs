@@ -19,7 +19,19 @@ namespace ClipRateRecorder.ViewModels
   {
     private readonly MainWatcherModel mainWatcherModel = new();
 
-    public ActivityRange? Range => this.mainWatcherModel.Range;
+    public ActivityRange? Range => this.IsSpot ? this.mainWatcherModel.SpotRange : this.mainWatcherModel.Range;
+
+    public bool IsSpot
+    {
+      get => this._isSpot;
+      set
+      {
+        this._isSpot = value;
+        this.OnPropertyChanged();
+        this.OnPropertyChanged(nameof(Range));
+      }
+    }
+    private bool _isSpot;
 
     public MainViewModel()
     {

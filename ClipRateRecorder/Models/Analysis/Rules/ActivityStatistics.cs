@@ -71,8 +71,14 @@ namespace ClipRateRecorder.Models.Analysis.Rules
 
     private double CalcScore()
     {
-      var baseValue = this.MostEffective * 2 + this.Effective - this.Ineffective - this.MostIneffective * 2;
-      return baseValue / 90;
+      var baseValue = this.TotalDuration - this.Normal + this.MostEffective + this.MostIneffective;
+      if (baseValue == 0)
+      {
+        return 0;
+      }
+
+      var effectiveValue = this.MostEffective * 2 + this.Effective - this.Ineffective - this.MostIneffective * 2;
+      return effectiveValue / baseValue * 100 / 2 + 50;
     }
 
     private ActivityEvaluation CalcEvaluation()

@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Documents;
 
 namespace ClipRateRecorder.Models.Analysis.Ranges
 {
@@ -42,31 +43,39 @@ namespace ClipRateRecorder.Models.Analysis.Ranges
       this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(this.Statistics)));
     }
 
-    private static async Task<ActivityRange> CreateInstanceAsync(MainContext db, IQueryable<WindowActivityData> dataSet) 
+    private static async Task<ActivityRange> CreateInstanceAsync(MainContext db, IQueryable<WindowActivityData> dataSet, ActivityEvaluator? evalucator = null) 
     {
       var list = await dataSet.ToListAsync();
-      var evalucator = await ActivityEvaluator.CreateFromDatabaseAsync(db);
+      evalucator ??= await ActivityEvaluator.CreateFromDatabaseAsync(db);
       var range = new ActivityRange(list, evalucator);
       await db.SaveChangesAsync();
       return range;
     }
 
-    private static async Task<ActivityRange> CreateInstanceAsync(DateTime start, DateTime end)
+    private static async Task<ActivityRange> CreateInstanceAsync(DateTime start, DateTime end, ActivityEvaluator? evalucator = null)
     {
       using var db = new MainContext();
-      return await CreateInstanceAsync(db, db.WindowActivities!.Where(a => a.StartTime >= start && a.StartTime < end));
+      return await CreateInstanceAsync(db, db.WindowActivities!.Where(a => a.StartTime >= start && a.StartTime < end), evalucator);
     }
 
-    public static async Task<ActivityRange> RangeOfDayAsync(DateTime day)
+    public static async Task<ActivityRange> RangeOfEmptyAsync(ActivityEvaluator? evalucator = null)
+    {
+      using var db = new MainContext();
+      evalucator ??= await ActivityEvaluator.CreateFromDatabaseAsync(db);
+      var range = new ActivityRange(Enumerable.Empty<WindowActivityData>(), evalucator);
+      return range;
+    }
+
+    public static async Task<ActivityRange> RangeOfDayAsync(DateTime day, ActivityEvaluator? evalucator = null)
     {
       var d = new DateOnly(day.Year, day.Month, day.Day).ToDateTime(TimeOnly.MinValue);
-      return await CreateInstanceAsync(d, d.AddDays(1));
+      return await CreateInstanceAsync(d, d.AddDays(1), evalucator);
     }
 
-    public static async Task<ActivityRange> RangeOfLatestAsync(int limit)
+    public static async Task<ActivityRange> RangeOfLatestAsync(int limit, ActivityEvaluator? evalucator = null)
     {
       using var db = new MainContext();
-      return await CreateInstanceAsync(db, db.WindowActivities!.OrderByDescending(a => a.StartTime).Take(limit));
+      return await CreateInstanceAsync(db, db.WindowActivities!.OrderByDescending(a => a.StartTime).Take(limit), evalucator);
     }
   }
 }

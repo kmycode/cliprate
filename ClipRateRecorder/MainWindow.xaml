@@ -17,6 +17,7 @@
   <Window.Resources>
     <cv:ActivityEvaluation2BooleanConverter x:Key="ActivityEvaluation2BooleanConv"/>
     <cv:ActivityEvaluation2BrushConverter x:Key="ActivityEvaluation2BrushConv"/>
+    <cv:NegativeConverter x:Key="NegativeConv"/>
     <Style TargetType="TextBlock" x:Key="Default">
       <Setter Property="Foreground" Value="White"/>
     </Style>
@@ -67,17 +68,6 @@
       <ColumnDefinition Width="180"/>
       <ColumnDefinition/>
     </Grid.ColumnDefinitions>
-    <Grid Grid.ColumnSpan="3">
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="40"/>
-        <ColumnDefinition/>
-        <ColumnDefinition Width="40"/>
-      </Grid.ColumnDefinitions>
-      <Button Content="&lt;" FontSize="36"/>
-      <TextBlock Grid.Column="1" Style="{StaticResource Default}" Text="2024/01/31"
-                 TextAlignment="Center" VerticalAlignment="Center" FontSize="30"/>
-      <Button Grid.Column="2" Content=">" FontSize="36"/>
-    </Grid>
     <Grid Grid.Row="1" Grid.Column="1">
       <Grid.ColumnDefinitions>
         <ColumnDefinition/>
@@ -166,10 +156,21 @@
         </Style>
       </Grid.Resources>
       <StackPanel>
-        <ToggleButton Content="概要" IsChecked="True"/>
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="30"/>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="30"/>
+          </Grid.ColumnDefinitions>
+          <Button Content="&lt;" FontSize="16"/>
+          <TextBlock Grid.Column="1" Style="{StaticResource Default}" Text="2024/01/31"
+                 TextAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
+          <Button Grid.Column="2" Content=">" FontSize="16"/>
+        </Grid>
+        <ToggleButton Content="一日" IsChecked="{Binding IsSpot,Converter={StaticResource NegativeConv}}"/>
+        <ToggleButton Content="スポット" IsChecked="{Binding IsSpot}"/>
         <ToggleButton Content="アクティビティ" IsEnabled="False"/>
         <ToggleButton Content="目標" IsEnabled="False"/>
-        <ToggleButton Content="監視" IsEnabled="False"/>
       </StackPanel>
       <StackPanel Grid.Row="1">
         <ToggleButton Content="設定" IsEnabled="False"/>
