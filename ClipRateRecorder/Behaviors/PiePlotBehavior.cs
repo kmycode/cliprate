@@ -42,8 +42,12 @@ namespace ClipRateRecorder.Behaviors
 
       var colors = new[] { Colors.DarkBlue, Colors.DeepSkyBlue, Colors.Gray, Colors.Red, Colors.DarkRed, };
 
-      this.AssociatedObject.Plot.Add.Pie(values);
-      this.AssociatedObject.Plot.Add.Pie(values.Select((v, i) => new PieSlice(v, colors.ElementAtOrDefault(i))).ToList());
+      var pie = this.AssociatedObject.Plot.Add.Pie(values.Select((v, i) => new PieSlice(v, colors.ElementAtOrDefault(i))).ToList());
+      this.AssociatedObject.Plot.Axes.Left.IsVisible = false;
+      this.AssociatedObject.Plot.Axes.Bottom.IsVisible = false;
+      this.AssociatedObject.Plot.Axes.Top.IsVisible = false;
+      this.AssociatedObject.Plot.Axes.Right.IsVisible = false;
+
       this.AssociatedObject.Refresh();
     }
   }

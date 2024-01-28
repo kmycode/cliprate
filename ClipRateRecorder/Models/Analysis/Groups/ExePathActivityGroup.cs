@@ -157,6 +157,14 @@ namespace ClipRateRecorder.Models.Analysis.Groups
       }
     }
 
+    public async Task SetDefaultEvaluationAsync(string exePath, ActivityEvaluation evaluation)
+    {
+      foreach (var target in this.Where(a => a.ExePath == exePath))
+      {
+        await target.SetDefaultEvaluationAsync(evaluation);
+      }
+    }
+
     public static ExePathActivityGroupCollection FromActivities(IEnumerable<WindowActivity> activities, ActivityEvaluator evaluator)
     {
       var exePathGroups = FromActivities(activities);
@@ -273,31 +281,22 @@ namespace ClipRateRecorder.Models.Analysis.Groups
       }
     }
 
-    public ReactiveCommand<string> SetDefaultEvaluationCommand =>
-      this._evaluateExePathActivityGroupCommand ??= new ReactiveCommand<string>()
-        .WithSubscribe(async (ev) =>
-        {
-          if (this.Rule != null)
-          {
-            var evaluation = ev switch
-            {
-              nameof(ActivityEvaluation.MostIneffective) => ActivityEvaluation.MostIneffective,
-              nameof(ActivityEvaluation.Ineffective) => ActivityEvaluation.Ineffective,
-              nameof(ActivityEvaluation.Effective) => ActivityEvaluation.Effective,
-              nameof(ActivityEvaluation.MostEffective) => ActivityEvaluation.MostEffective,
-              _ => ActivityEvaluation.Normal,
-            };
-            if (evaluation != this.Rule.Evaluation)
-            {
-              this.Rule.Evaluation = evaluation;
+    public async Task SetDefaultEvaluationAsync(ActivityEvaluation evaluation)
+    {
+      if (this.Rule == null)
+      {
+        return;
+      }
 
-              using var db = new MainContext();
-              await this.Rule.SaveDataAsync(db);
+      if (evaluation != this.Rule.Evaluation)
+      {
+        this.Rule.Evaluation = evaluation;
 
-              this.UpdateEvalucations();
-            }
-          }
-        });
-    private ReactiveCommand<string> _evaluateExePathActivityGroupCommand;
+        using var db = new MainContext();
+        await this.Rule.SaveDataAsync(db);
+
+        this.UpdateEvalucations();
+      }
+    }
   }
 }

@@ -21,7 +21,7 @@ namespace ClipRateRecorder.ViewModels
 
     public ActivityRange? Range => this.IsSpot ? this.mainWatcherModel.SpotRange : this.mainWatcherModel.Range;
 
-    public DateTime Today => DateTime.Today;
+    public DateTime CurrentDay => this.mainWatcherModel.CurrentDay;
 
     public bool IsSpot
     {
@@ -45,11 +45,26 @@ namespace ClipRateRecorder.ViewModels
       this.mainWatcherModel.Dispose();
     }
 
+    public ReactiveCommand StepPrevDayCommand =>
+      this._stepPrevDayCommand ??= new ReactiveCommand().WithSubscribe(async () => await this.mainWatcherModel.StepPrewDayAsync());
+    private ReactiveCommand _stepPrevDayCommand;
+
+    public ReactiveCommand StepNextDayCommand =>
+      this._stepNextDayCommand ??= new ReactiveCommand().WithSubscribe(async () => await this.mainWatcherModel.StepNextDayAsync());
+    private ReactiveCommand _stepNextDayCommand;
+
     public ReactiveCommand ResetSpotCommand =>
       this._resetSpotCommand ??= new ReactiveCommand().WithSubscribe(() => {
         this.mainWatcherModel.ResetSpot();
         this.OnPropertyChanged(nameof(Range));
         });
     private ReactiveCommand _resetSpotCommand;
+
+    public ReactiveCommand<object[]> SetDefaultEvaluationCommand =>
+      this._setDefaultEvaluationCommand ??= new ReactiveCommand<object[]>().WithSubscribe(async (pms) =>
+      {
+        await this.mainWatcherModel.SetDefaultEvaluationAsync(((ExePathActivityGroup)pms[0]).ExePath, (string)pms[1]);
+      });
+    private ReactiveCommand<object[]> _setDefaultEvaluationCommand;
   }
 }

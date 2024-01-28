@@ -15,9 +15,23 @@ namespace ClipRateRecorder.Models.Logics
 {
   internal class MainWatcherModel : IDisposable, INotifyPropertyChanged
   {
-    private readonly IWatcherLoop loop;
+    private IWatcherLoop? loop;
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    public DateTime CurrentDay
+    {
+      get => this._currentDay;
+      set
+      {
+        if (this._currentDay != value)
+        {
+          this._currentDay = value;
+          this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(this.CurrentDay)));
+        }
+      }
+    }
+    private DateTime _currentDay;
 
     public ActivityRange? Range
     {
@@ -49,27 +63,62 @@ namespace ClipRateRecorder.Models.Logics
 
     public MainWatcherModel()
     {
+      Task.Run(async () => await this.ChangeDayAsync(DateTime.Now, withSpot: true));
+    }
+
+    private async Task ChangeDayAsync(DateTime day, bool withSpot = false)
+    {
+      if (this.loop != null)
+      {
+        this.loop.Ticked -= this.Range!.ActivityGroups.OnWindowActivityTicked;
+
+        if (withSpot)
+        {
+          this.loop.Ticked -= this.SpotRange!.ActivityGroups.OnWindowActivityTicked;
+        }
+      }
+
       this.loop = ActivityWatcher.StartWatchLoop();
 
-      Task.Run(async () =>
+      using var db = new MainContext();
+      var evalucator = await ActivityEvaluator.CreateFromDatabaseAsync(db);
+
+      var range = await ActivityRange.RangeOfDayAsync(day, evalucator);
+      var spotRange = await ActivityRange.RangeOfEmptyAsync(evalucator);
+
+      ThreadUtil.RunGuiThread(() =>
       {
-        using var db = new MainContext();
-        var evalucator = await ActivityEvaluator.CreateFromDatabaseAsync(db);
-
-        var range = await ActivityRange.RangeOfDayAsync(DateTime.Now, evalucator);
-        ThreadUtil.RunGuiThread(() => this.Range = range);
-
-        var spotRange = await ActivityRange.RangeOfEmptyAsync(evalucator);
-        ThreadUtil.RunGuiThread(() => this.SpotRange = spotRange);
-
-        this.loop.Ticked += range.ActivityGroups.OnWindowActivityTicked;
-        this.loop.Ticked += spotRange.ActivityGroups.OnWindowActivityTicked;
+        this.Range = range;
+        if (withSpot)
+        {
+          this.SpotRange = spotRange;
+        }
+        this.CurrentDay = day;
       });
+
+      if (DateOnly.FromDateTime(day) == DateOnly.FromDateTime(DateTime.Now))
+      {
+        this.loop.Ticked += range.ActivityGroups.OnWindowActivityTicked;
+        if (withSpot)
+        {
+          this.loop.Ticked += spotRange.ActivityGroups.OnWindowActivityTicked;
+        }
+      }
+    }
+
+    public async Task StepPrewDayAsync()
+    {
+      await this.ChangeDayAsync(this.CurrentDay.AddDays(-1));
+    }
+
+    public async Task StepNextDayAsync()
+    {
+      await this.ChangeDayAsync(this.CurrentDay.AddDays(1));
     }
 
     public void Dispose()
     {
-      var task = this.loop.DisposeAsync();
+      var task = this.loop!.DisposeAsync();
 
       while (!(task.IsCompleted || task.IsFaulted))
       {
@@ -84,7 +133,7 @@ namespace ClipRateRecorder.Models.Logics
         return;
       }
 
-      this.loop.Ticked -= this.SpotRange.ActivityGroups.OnWindowActivityTicked;
+      this.loop!.Ticked -= this.SpotRange.ActivityGroups.OnWindowActivityTicked;
 
       Task.Run(async () =>
       {
@@ -96,6 +145,14 @@ namespace ClipRateRecorder.Models.Logics
 
         this.loop.Ticked += spotRange.ActivityGroups.OnWindowActivityTicked;
       });
+    }
+
+    internal async Task SetDefaultEvaluationAsync(string exePath, string ev)
+    {
+      var evaluation = EnumUtils.StringToActivityEvaluation(ev);
+
+      await this.Range!.ActivityGroups.SetDefaultEvaluationAsync(exePath, evaluation);
+      await this.SpotRange!.ActivityGroups.SetDefaultEvaluationAsync(exePath, evaluation);
     }
   }
 }

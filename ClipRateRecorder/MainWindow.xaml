@@ -9,6 +9,7 @@
         xmlns:vm="clr-namespace:ClipRateRecorder.ViewModels"
         xmlns:cv="clr-namespace:ClipRateRecorder.Converters"
         xmlns:b="clr-namespace:ClipRateRecorder.Behaviors"
+        xmlns:u="clr-namespace:ClipRateRecorder.Utils"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
   <Window.DataContext>
@@ -18,7 +19,10 @@
     <cv:ActivityEvaluation2BooleanConverter x:Key="ActivityEvaluation2BooleanConv"/>
     <cv:ActivityEvaluation2BrushConverter x:Key="ActivityEvaluation2BrushConv"/>
     <cv:Boolean2VisibilityConverter x:Key="Boolean2VisibilityConv"/>
+    <cv:FixedStringLiteralConverter x:Key="FixedStringLiteralConv"/>
+    <cv:MultipleCommandParametersConverter x:Key="MultipleCommandParametersConv"/>
     <cv:NegativeConverter x:Key="NegativeConv"/>
+    <u:BindingProxy Data="{Binding}" x:Key="RootBindingProxy"/>
     <Style TargetType="TextBlock" x:Key="Default">
       <Setter Property="Foreground" Value="White"/>
     </Style>
@@ -89,7 +93,7 @@
           <Button Visibility="{Binding IsSpot,Converter={StaticResource Boolean2VisibilityConv}}"
                   Grid.Column="1" Content="Reset" Command="{Binding ResetSpotCommand}"/>
         </Grid>
-        <scott:WpfPlot Grid.Row="1" x:Name="TestPlot">
+        <scott:WpfPlot Grid.Row="1" x:Name="TestPlot" IsHitTestVisible="False">
           <i:Interaction.Behaviors>
             <b:PiePlotBehavior Values="{Binding Range.Statistics.Values}"/>
           </i:Interaction.Behaviors>
@@ -122,21 +126,51 @@
                               Grid.Column="1">
                   <ToggleButton.ContextMenu>
                     <ContextMenu Placement="Bottom">
-                      <MenuItem Header="非常に効率的" IsCheckable="True"
-                                IsChecked="{Binding Rule.Evaluation,Mode=OneWay,Converter={StaticResource ActivityEvaluation2BooleanConv},ConverterParameter=MostEffective}"
-                                Command="{Binding SetDefaultEvaluationCommand}" CommandParameter="MostEffective"/>
-                      <MenuItem Header="効率的" IsCheckable="True"
-                                IsChecked="{Binding Rule.Evaluation,Mode=OneWay,Converter={StaticResource ActivityEvaluation2BooleanConv},ConverterParameter=Effective}"
-                                Command="{Binding SetDefaultEvaluationCommand}" CommandParameter="Effective"/>
-                      <MenuItem Header="普通" IsCheckable="True"
-                                IsChecked="{Binding Rule.Evaluation,Mode=OneWay,Converter={StaticResource ActivityEvaluation2BooleanConv},ConverterParameter=Normal}"
-                                Command="{Binding SetDefaultEvaluationCommand}" CommandParameter="Normal"/>
-                      <MenuItem Header="非効率的" IsCheckable="True"
-                                IsChecked="{Binding Rule.Evaluation,Mode=OneWay,Converter={StaticResource ActivityEvaluation2BooleanConv},ConverterParameter=Ineffective}"
-                                Command="{Binding SetDefaultEvaluationCommand}" CommandParameter="Ineffective"/>
-                      <MenuItem Header="非常に非効率的" IsCheckable="True"
-                                IsChecked="{Binding Rule.Evaluation,Mode=OneWay,Converter={StaticResource ActivityEvaluation2BooleanConv},ConverterParameter=MostIneffective}"
-                                Command="{Binding SetDefaultEvaluationCommand}" CommandParameter="MostIneffective"/>
+                      <MenuItem Header="非常に効率的" IsCheckable="True" Command="{Binding Data.SetDefaultEvaluationCommand,Source={StaticResource RootBindingProxy}}"
+                                IsChecked="{Binding Rule.Evaluation,Mode=OneWay,Converter={StaticResource ActivityEvaluation2BooleanConv},ConverterParameter=MostEffective}">
+                        <MenuItem.CommandParameter>
+                          <MultiBinding Converter="{StaticResource MultipleCommandParametersConv}">
+                            <Binding/>
+                            <Binding Converter="{StaticResource FixedStringLiteralConv}" ConverterParameter="MostEffective"/>
+                          </MultiBinding>
+                        </MenuItem.CommandParameter>
+                      </MenuItem>
+                      <MenuItem Header="効率的" IsCheckable="True" Command="{Binding Data.SetDefaultEvaluationCommand,Source={StaticResource RootBindingProxy}}"
+                                IsChecked="{Binding Rule.Evaluation,Mode=OneWay,Converter={StaticResource ActivityEvaluation2BooleanConv},ConverterParameter=Effective}">
+                        <MenuItem.CommandParameter>
+                          <MultiBinding Converter="{StaticResource MultipleCommandParametersConv}">
+                            <Binding/>
+                            <Binding Converter="{StaticResource FixedStringLiteralConv}" ConverterParameter="Effective"/>
+                          </MultiBinding>
+                        </MenuItem.CommandParameter>
+                      </MenuItem>
+                      <MenuItem Header="普通" IsCheckable="True" Command="{Binding Data.SetDefaultEvaluationCommand,Source={StaticResource RootBindingProxy}}"
+                                IsChecked="{Binding Rule.Evaluation,Mode=OneWay,Converter={StaticResource ActivityEvaluation2BooleanConv},ConverterParameter=Normal}">
+                        <MenuItem.CommandParameter>
+                          <MultiBinding Converter="{StaticResource MultipleCommandParametersConv}">
+                            <Binding/>
+                            <Binding Converter="{StaticResource FixedStringLiteralConv}" ConverterParameter="Normal"/>
+                          </MultiBinding>
+                        </MenuItem.CommandParameter>
+                      </MenuItem>
+                      <MenuItem Header="非効率的" IsCheckable="True" Command="{Binding Data.SetDefaultEvaluationCommand,Source={StaticResource RootBindingProxy}}"
+                                IsChecked="{Binding Rule.Evaluation,Mode=OneWay,Converter={StaticResource ActivityEvaluation2BooleanConv},ConverterParameter=Ineffective}">
+                        <MenuItem.CommandParameter>
+                          <MultiBinding Converter="{StaticResource MultipleCommandParametersConv}">
+                            <Binding/>
+                            <Binding Converter="{StaticResource FixedStringLiteralConv}" ConverterParameter="Ineffective"/>
+                          </MultiBinding>
+                        </MenuItem.CommandParameter>
+                      </MenuItem>
+                      <MenuItem Header="非常に非効率的" IsCheckable="True" Command="{Binding Data.SetDefaultEvaluationCommand,Source={StaticResource RootBindingProxy}}"
+                                IsChecked="{Binding Rule.Evaluation,Mode=OneWay,Converter={StaticResource ActivityEvaluation2BooleanConv},ConverterParameter=MostIneffective}">
+                        <MenuItem.CommandParameter>
+                          <MultiBinding Converter="{StaticResource MultipleCommandParametersConv}">
+                            <Binding/>
+                            <Binding Converter="{StaticResource FixedStringLiteralConv}" ConverterParameter="MostIneffective"/>
+                          </MultiBinding>
+                        </MenuItem.CommandParameter>
+                      </MenuItem>
                       <Separator/>
                       <MenuItem Header="詳細" IsEnabled="False"/>
                     </ContextMenu>
@@ -175,10 +209,10 @@
             <ColumnDefinition/>
             <ColumnDefinition Width="30"/>
           </Grid.ColumnDefinitions>
-          <Button Content="&lt;" FontSize="16"/>
-          <TextBlock Grid.Column="1" Style="{StaticResource Default}" Text="{Binding Today,StringFormat=yyyy/MM/dd}"
-                 TextAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
-          <Button Grid.Column="2" Content=">" FontSize="16"/>
+          <Button Content="&lt;" FontSize="16" Command="{Binding StepPrevDayCommand}"/>
+          <TextBlock Grid.Column="1" Style="{StaticResource Default}" Text="{Binding CurrentDay,StringFormat=yyyy/MM/dd}"
+                     TextAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
+          <Button Grid.Column="2" Content=">" FontSize="16" Command="{Binding StepNextDayCommand}"/>
         </Grid>
         <ToggleButton Content="一日" IsChecked="{Binding IsSpot,Converter={StaticResource NegativeConv}}"/>
         <ToggleButton Content="スポット" IsChecked="{Binding IsSpot}"/>
