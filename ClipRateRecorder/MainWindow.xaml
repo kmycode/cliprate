@@ -20,8 +20,10 @@
     <cv:ActivityEvaluation2BrushConverter x:Key="ActivityEvaluation2BrushConv"/>
     <cv:Boolean2VisibilityConverter x:Key="Boolean2VisibilityConv"/>
     <cv:FixedStringLiteralConverter x:Key="FixedStringLiteralConv"/>
+    <cv:MultibleBooleanOrConverter x:Key="MultipleBooleanOrConv"/>
     <cv:MultipleCommandParametersConverter x:Key="MultipleCommandParametersConv"/>
     <cv:NegativeConverter x:Key="NegativeConv"/>
+    <cv:ViewPageConverter x:Key="ViewPageConv"/>
     <u:BindingProxy Data="{Binding}" x:Key="RootBindingProxy"/>
     <Style TargetType="TextBlock" x:Key="Default">
       <Setter Property="Foreground" Value="White"/>
@@ -73,11 +75,18 @@
       <ColumnDefinition Width="180"/>
       <ColumnDefinition/>
     </Grid.ColumnDefinitions>
+    
     <Grid Grid.Row="1" Grid.Column="1">
       <Grid.ColumnDefinitions>
         <ColumnDefinition/>
         <ColumnDefinition Width="240"/>
       </Grid.ColumnDefinitions>
+      <Grid.Visibility>
+        <MultiBinding Converter="{StaticResource MultipleBooleanOrConv}">
+          <Binding Path="Page" Converter="{StaticResource ViewPageConv}" ConverterParameter="?Daily"/>
+          <Binding Path="Page" Converter="{StaticResource ViewPageConv}" ConverterParameter="?Spot"/>
+        </MultiBinding>
+      </Grid.Visibility>
       <Grid>
         <Grid.RowDefinitions>
           <RowDefinition Height="auto"/>
@@ -90,7 +99,7 @@
           </Grid.ColumnDefinitions>
           <TextBlock Text="{Binding Range.Statistics.Score,StringFormat=0.00}" Style="{StaticResource Default}"
                      FontSize="48" TextAlignment="Center"/>
-          <Button Visibility="{Binding IsSpot,Converter={StaticResource Boolean2VisibilityConv}}"
+          <Button Visibility="{Binding Page,Converter={StaticResource ViewPageConv},ConverterParameter=Spot}"
                   Grid.Column="1" Content="Reset" Command="{Binding ResetSpotCommand}"/>
         </Grid>
         <scott:WpfPlot Grid.Row="1" x:Name="TestPlot" IsHitTestVisible="False">
@@ -190,6 +199,48 @@
       </Grid>
     </Grid>
 
+    <Grid Grid.Row="1" Grid.Column="1" Visibility="{Binding Page,Converter={StaticResource ViewPageConv},ConverterParameter=Milestone}">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="40"/>
+        <RowDefinition/>
+      </Grid.RowDefinitions>
+
+      <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" ScrollViewer.VerticalScrollBarVisibility="Hidden">
+        <Button Content="Add" Height="40" Width="100" Margin="0"/>
+        <ToggleButton Content="Edit" Style="{StaticResource DefaultToggleButton}" FontSize="20" Height="40" Width="100" HorizontalContentAlignment="Center"/>
+      </StackPanel>
+
+      <Grid Grid.Row="1">
+        <ItemsControl ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True"
+                      ItemsSource="{Binding MilestoneRange.Milestones}" Margin="8,0,0,0">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <VirtualizingStackPanel/>
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.Template>
+            <ControlTemplate>
+              <ScrollViewer Padding="{TemplateBinding Control.Padding}" Focusable="False">
+                <ItemsPresenter SnapsToDevicePixels="{TemplateBinding UIElement.SnapsToDevicePixels}" />
+              </ScrollViewer>
+            </ControlTemplate>
+          </ItemsControl.Template>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Grid Margin="0,0,0,8">
+                <StackPanel>
+                  <TextBlock Style="{StaticResource Default}" FontSize="24">
+                    <Run Text="{Binding StartTime,StringFormat=HH:mm,Mode=OneWay}"/> <Run Text="から" FontSize="16"/> <Run Text="{Binding EndTime,StringFormat=HH:mm,Mode=OneWay}"/> <Run Text="まで" FontSize="16"/> <Run Text="スコア" FontSize="16" Foreground="#aff"/> <Run Text="{Binding Value,StringFormat=0}"/> <Run Text="以上" FontSize="16"/>
+                  </TextBlock>
+                  <TextBlock Style="{StaticResource Default}" FontSize="36" FontWeight="Bold" Text="{Binding CurrentValue,StringFormat=0}"/>
+                </StackPanel>
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </Grid>
+    </Grid>
+
     <Grid Grid.Row="1" Grid.Column="0">
       <Grid.RowDefinitions>
         <RowDefinition/>
@@ -214,10 +265,13 @@
                      TextAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
           <Button Grid.Column="2" Content=">" FontSize="16" Command="{Binding StepNextDayCommand}"/>
         </Grid>
-        <ToggleButton Content="一日" IsChecked="{Binding IsSpot,Converter={StaticResource NegativeConv}}"/>
-        <ToggleButton Content="スポット" IsChecked="{Binding IsSpot}"/>
+        <ToggleButton Content="一日" IsChecked="{Binding Page,Converter={StaticResource ViewPageConv},Mode=OneWay,ConverterParameter=Daily}"
+                      Command="{Binding MoveDailyPageCommand}"/>
+        <ToggleButton Content="スポット" IsChecked="{Binding Page,Converter={StaticResource ViewPageConv},Mode=OneWay,ConverterParameter=Spot}"
+                      Command="{Binding MoveSpotPageCommand}"/>
         <ToggleButton Content="アクティビティ" IsEnabled="False"/>
-        <ToggleButton Content="目標" IsEnabled="False"/>
+        <ToggleButton Content="目標" IsChecked="{Binding Page,Converter={StaticResource ViewPageConv},Mode=OneWay,ConverterParameter=Milestone}"
+                      Command="{Binding MoveMilestonePageCommand}"/>
       </StackPanel>
       <StackPanel Grid.Row="1">
         <ToggleButton Content="設定" IsEnabled="False"/>

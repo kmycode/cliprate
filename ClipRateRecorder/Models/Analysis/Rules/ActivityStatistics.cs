@@ -80,7 +80,9 @@ namespace ClipRateRecorder.Models.Analysis.Rules
       }
 
       var effectiveValue = this.MostEffective * 2 + this.Effective - this.Ineffective - this.MostIneffective * 2;
-      return effectiveValue / baseValue * 100 / 2 + 50;
+      var value = effectiveValue / baseValue * 100 / 2 + 50;
+
+      return Math.Max(value, 0);
     }
 
     private ActivityEvaluation CalcEvaluation()

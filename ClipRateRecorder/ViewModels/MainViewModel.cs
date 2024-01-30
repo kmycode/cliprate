@@ -2,6 +2,7 @@
 using ClipRateRecorder.Models.Analysis.Ranges;
 using ClipRateRecorder.Models.Logics;
 using ClipRateRecorder.Models.Watching;
+using ClipRateRecorder.Utils;
 using Reactive.Bindings;
 using System;
 using System.Collections.Generic;
@@ -19,25 +20,38 @@ namespace ClipRateRecorder.ViewModels
   {
     private readonly MainWatcherModel mainWatcherModel = new();
 
-    public ActivityRange? Range => this.IsSpot ? this.mainWatcherModel.SpotRange : this.mainWatcherModel.Range;
+    public ActivityRange? Range => this.Page == ViewPage.Spot ? this.mainWatcherModel.SpotRange : this.mainWatcherModel.Range;
+
+    public MilestoneRange? MilestoneRange => this.mainWatcherModel.MilestoneRange;
 
     public DateTime CurrentDay => this.mainWatcherModel.CurrentDay;
 
-    public bool IsSpot
+    public ViewPage Page
     {
-      get => this._isSpot;
+      get => this._page;
       set
       {
-        this._isSpot = value;
+        this._page = value;
         this.OnPropertyChanged();
-        this.OnPropertyChanged(nameof(Range));
+
+        if (value == ViewPage.Spot || value == ViewPage.Daily)
+        {
+          this.OnPropertyChanged(nameof(Range));
+        }
       }
     }
-    private bool _isSpot;
+    private ViewPage _page;
 
     public MainViewModel()
     {
       this.mainWatcherModel.PropertyChanged += this.RaisePropertyChanged;
+      this.mainWatcherModel.PropertyChanged += (sender, e) =>
+      {
+        if (e.PropertyName == nameof(this.mainWatcherModel.SpotRange))
+        {
+          this.OnPropertyChanged(nameof(Range));
+        }
+      };
     }
 
     public void OnWindowClose()
@@ -45,26 +59,35 @@ namespace ClipRateRecorder.ViewModels
       this.mainWatcherModel.Dispose();
     }
 
+    public ReactiveCommand MoveDailyPageCommand =>
+      this._moveDailyPageCommand ??= new ReactiveCommand().WithSubscribe(() => this.Page = ViewPage.Daily);
+    private ReactiveCommand? _moveDailyPageCommand;
+
+    public ReactiveCommand MoveSpotPageCommand =>
+      this._moveSpotPageCommand ??= new ReactiveCommand().WithSubscribe(() => this.Page = ViewPage.Spot);
+    private ReactiveCommand? _moveSpotPageCommand;
+
+    public ReactiveCommand MoveMilestonePageCommand =>
+      this._moveMilestonePageCommand ??= new ReactiveCommand().WithSubscribe(() => this.Page = ViewPage.Milestone);
+    private ReactiveCommand? _moveMilestonePageCommand;
+
     public ReactiveCommand StepPrevDayCommand =>
       this._stepPrevDayCommand ??= new ReactiveCommand().WithSubscribe(async () => await this.mainWatcherModel.StepPrewDayAsync());
-    private ReactiveCommand _stepPrevDayCommand;
+    private ReactiveCommand? _stepPrevDayCommand;
 
     public ReactiveCommand StepNextDayCommand =>
       this._stepNextDayCommand ??= new ReactiveCommand().WithSubscribe(async () => await this.mainWatcherModel.StepNextDayAsync());
-    private ReactiveCommand _stepNextDayCommand;
+    private ReactiveCommand? _stepNextDayCommand;
 
     public ReactiveCommand ResetSpotCommand =>
-      this._resetSpotCommand ??= new ReactiveCommand().WithSubscribe(() => {
-        this.mainWatcherModel.ResetSpot();
-        this.OnPropertyChanged(nameof(Range));
-        });
-    private ReactiveCommand _resetSpotCommand;
+      this._resetSpotCommand ??= new ReactiveCommand().WithSubscribe(this.mainWatcherModel.ResetSpot);
+    private ReactiveCommand? _resetSpotCommand;
 
     public ReactiveCommand<object[]> SetDefaultEvaluationCommand =>
       this._setDefaultEvaluationCommand ??= new ReactiveCommand<object[]>().WithSubscribe(async (pms) =>
       {
         await this.mainWatcherModel.SetDefaultEvaluationAsync(((ExePathActivityGroup)pms[0]).ExePath, (string)pms[1]);
       });
-    private ReactiveCommand<object[]> _setDefaultEvaluationCommand;
+    private ReactiveCommand<object[]>? _setDefaultEvaluationCommand;
   }
 }

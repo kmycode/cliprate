@@ -7,6 +7,13 @@ using System.Threading.Tasks;
 
 namespace ClipRateRecorder.Utils
 {
+  public enum ViewPage
+  {
+    Daily,
+    Spot,
+    Milestone,
+  }
+
   internal static class EnumUtils
   {
     public static ActivityEvaluation StringToActivityEvaluation(string ev)

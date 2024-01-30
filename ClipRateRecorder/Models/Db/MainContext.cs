@@ -18,6 +18,8 @@ namespace ClipRateRecorder.Models.Db
 
     public DbSet<ActivityEvaluationRuleData>? ActivityEvaluationRules { get; set; }
 
+    public DbSet<MilestoneData>? Milestones { get; set; }
+
     public MainContext() : this(".\\clipraterecorder.db")
     {
     }

@@ -22,13 +22,13 @@ namespace ClipRateRecorder.Models.Analysis.Groups
   {
     public double TotalDuration => this.Any() ? this.Sum(a => a.TotalDuration) : 0;
 
-    private IEnumerable<WindowActivity> Activities => this.SelectMany(a => a.WindowTitleGroups.SelectMany(b => b.Activities));
+    public IEnumerable<WindowActivity> Activities => this.SelectMany(a => a.WindowTitleGroups.SelectMany(b => b.Activities));
 
     private IEnumerable<ActivityStatistics> AllStatistics => this.Select(a => a.Statistics);
 
     public ActivityStatistics Statistics { get; private set; } = ActivityStatistics.Empty;
 
-    public event EventHandler? StatisticsChanged;
+    public event EventHandler<StatisticsChangedEventArgs>? StatisticsUpdated;
 
     public ActivityEvaluator? Evaluator
     {
@@ -136,7 +136,7 @@ namespace ClipRateRecorder.Models.Analysis.Groups
       }
 
       this.Statistics = new(this.AllStatistics);
-      this.StatisticsChanged?.Invoke(this, EventArgs.Empty);
+      this.StatisticsUpdated?.Invoke(this, new StatisticsChangedEventArgs(this, this.Statistics));
     }
 
     private void Reorder()
@@ -297,6 +297,19 @@ namespace ClipRateRecorder.Models.Analysis.Groups
 
         this.UpdateEvalucations();
       }
+    }
+  }
+
+  class StatisticsChangedEventArgs : EventArgs
+  {
+    public ExePathActivityGroupCollection ExeGroups { get; }
+
+    public ActivityStatistics Statistics { get; }
+
+    public StatisticsChangedEventArgs(ExePathActivityGroupCollection sender, ActivityStatistics statistics)
+    {
+      this.ExeGroups = sender;
+      this.Statistics = statistics;
     }
   }
 }

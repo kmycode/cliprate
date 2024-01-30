@@ -30,12 +30,12 @@ namespace ClipRateRecorder.Models.Analysis.Ranges
       this.Activities = new ObservableCollection<WindowActivity>(dataSet.OrderBy(a => a.StartTime).Select(WindowActivity.FromData));
       this.ActivityGroups = ExePathActivityGroupCollection.FromActivities(this.Activities, evalucator);
 
-      this.ActivityGroups.StatisticsChanged += this.ActivityGroups_StatisticsChanged;
+      this.ActivityGroups.StatisticsUpdated += this.ActivityGroups_StatisticsChanged;
     }
 
     public void Dispose()
     {
-      this.ActivityGroups.StatisticsChanged -= this.ActivityGroups_StatisticsChanged;
+      this.ActivityGroups.StatisticsUpdated -= this.ActivityGroups_StatisticsChanged;
     }
 
     private void ActivityGroups_StatisticsChanged(object? sender, EventArgs e)
@@ -68,7 +68,7 @@ namespace ClipRateRecorder.Models.Analysis.Ranges
 
     public static async Task<ActivityRange> RangeOfDayAsync(DateTime day, ActivityEvaluator? evalucator = null)
     {
-      var d = new DateOnly(day.Year, day.Month, day.Day).ToDateTime(TimeOnly.MinValue);
+      var d = day.Date;
       return await CreateInstanceAsync(d, d.AddDays(1), evalucator);
     }
 

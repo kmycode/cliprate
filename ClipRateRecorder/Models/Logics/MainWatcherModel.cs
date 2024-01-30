@@ -61,6 +61,20 @@ namespace ClipRateRecorder.Models.Logics
     }
     private ActivityRange? _spotRange;
 
+    public MilestoneRange? MilestoneRange
+    {
+      get => this._milestoneRange;
+      set
+      {
+        if (this._milestoneRange != value)
+        {
+          this._milestoneRange = value;
+          this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MilestoneRange)));
+        }
+      }
+    }
+    private MilestoneRange? _milestoneRange;
+
     public MainWatcherModel()
     {
       Task.Run(async () => await this.ChangeDayAsync(DateTime.Now, withSpot: true));
@@ -71,12 +85,15 @@ namespace ClipRateRecorder.Models.Logics
       if (this.loop != null)
       {
         this.loop.Ticked -= this.Range!.ActivityGroups.OnWindowActivityTicked;
-
+        this.Range!.ActivityGroups.StatisticsUpdated -= this.MilestoneRange!.OnActivityStatisticsUpdated;
         if (withSpot)
         {
           this.loop.Ticked -= this.SpotRange!.ActivityGroups.OnWindowActivityTicked;
         }
       }
+
+      this.Range?.Dispose();
+      this.SpotRange?.Dispose();
 
       this.loop = ActivityWatcher.StartWatchLoop();
 
@@ -85,10 +102,12 @@ namespace ClipRateRecorder.Models.Logics
 
       var range = await ActivityRange.RangeOfDayAsync(day, evalucator);
       var spotRange = await ActivityRange.RangeOfEmptyAsync(evalucator);
+      var milestone = await MilestoneRange.RangeOfDayAsync(day);
 
       ThreadUtil.RunGuiThread(() =>
       {
         this.Range = range;
+        this.MilestoneRange = milestone;
         if (withSpot)
         {
           this.SpotRange = spotRange;
@@ -99,6 +118,7 @@ namespace ClipRateRecorder.Models.Logics
       if (DateOnly.FromDateTime(day) == DateOnly.FromDateTime(DateTime.Now))
       {
         this.loop.Ticked += range.ActivityGroups.OnWindowActivityTicked;
+        range.ActivityGroups.StatisticsUpdated += milestone.OnActivityStatisticsUpdated;
         if (withSpot)
         {
           this.loop.Ticked += spotRange.ActivityGroups.OnWindowActivityTicked;
