@@ -13,7 +13,14 @@ namespace ClipRateRecorder.Converters
   {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-      if (value is bool b) return b ? Visibility.Visible : Visibility.Collapsed;
+      if (value is bool b)
+      {
+        if (parameter?.ToString() == "Negative")
+        {
+          return b ? Visibility.Collapsed : Visibility.Visible;
+        }
+        return b ? Visibility.Visible : Visibility.Collapsed;
+      }
       throw new NotImplementedException();
     }
 

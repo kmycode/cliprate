@@ -19,36 +19,45 @@ namespace ClipRateRecorder.Models.Analysis.Ranges
   {
     public ObservableCollection<Milestone> Milestones { get; }
 
-    private MilestoneRange(IEnumerable<MilestoneData> dataSet)
+    private MilestoneRange(IEnumerable<MilestoneData> dataSet, DateTime start, DateTime end)
     {
       this.Milestones = new ObservableCollection<Milestone>(dataSet.OrderBy(a => a.StartTime).Select(Milestone.FromData));
-
-      this.Milestones.Add(new Milestone
-      {
-        EndHours = 20,
-        EndMinutes = 0,
-        StartHours = 0,
-        StartMinutes = 0,
-        Target = MilestoneTarget.AllEffective,
-        Type = MilestoneType.More,
-        Value = 30,
-      });
     }
 
-    internal void OnActivityStatisticsUpdated(object? sender, StatisticsChangedEventArgs e)
+    public void UpdateStatuses(ExePathActivityGroupCollection exeGroups)
     {
-      var exeGroups = e.ExeGroups;
-
       foreach (var milestone in this.Milestones)
       {
         milestone.UpdateStatus(exeGroups.Activities);
       }
     }
 
-    private static async Task<MilestoneRange> CreateInstanceAsync(MainContext db, IQueryable<MilestoneData> dataSet)
+    internal void OnActivityStatisticsUpdated(object? sender, StatisticsChangedEventArgs e)
+    {
+      var exeGroups = e.ExeGroups;
+      this.UpdateStatuses(exeGroups);
+    }
+
+    public async Task AddMilestoneAsync(DateTime day)
+    {
+      var milestone = new Milestone(day);
+
+      this.Milestones.Add(milestone);
+
+      using var db = new MainContext();
+      await milestone.SaveDataAsync(db);
+    }
+
+    public async Task RemoveMilestoneAsync(Milestone milestone)
+    {
+      using var db = new MainContext();
+      await milestone.RemoveDataAndSaveAsync(db);
+    }
+
+    private static async Task<MilestoneRange> CreateInstanceAsync(MainContext db, IQueryable<MilestoneData> dataSet, DateTime start, DateTime end)
     {
       var list = await dataSet.ToListAsync();
-      var range = new MilestoneRange(list);
+      var range = new MilestoneRange(list, start, end);
       await db.SaveChangesAsync();
       return range;
     }
@@ -56,14 +65,7 @@ namespace ClipRateRecorder.Models.Analysis.Ranges
     private static async Task<MilestoneRange> CreateInstanceAsync(DateTime start, DateTime end)
     {
       using var db = new MainContext();
-      return await CreateInstanceAsync(db, db.Milestones!.Where(a => a.StartTime >= start && a.StartTime < end));
-    }
-
-    public static MilestoneRange RangeOfEmpty()
-    {
-      using var db = new MainContext();
-      var range = new MilestoneRange(Enumerable.Empty<MilestoneData>());
-      return range;
+      return await CreateInstanceAsync(db, db.Milestones!.Where(a => a.StartTime >= start && a.StartTime < end), start, end);
     }
 
     public static async Task<MilestoneRange> RangeOfDayAsync(DateTime day)

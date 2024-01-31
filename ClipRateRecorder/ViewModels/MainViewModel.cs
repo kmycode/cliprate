@@ -1,5 +1,6 @@
 ﻿using ClipRateRecorder.Models.Analysis.Groups;
 using ClipRateRecorder.Models.Analysis.Ranges;
+using ClipRateRecorder.Models.Goals;
 using ClipRateRecorder.Models.Logics;
 using ClipRateRecorder.Models.Watching;
 using ClipRateRecorder.Utils;
@@ -41,6 +42,20 @@ namespace ClipRateRecorder.ViewModels
       }
     }
     private ViewPage _page;
+
+    public bool IsMilestoneEdit
+    {
+      get => this._isMilestoneEdit;
+      set
+      {
+        if (this._isMilestoneEdit != value)
+        {
+          this._isMilestoneEdit = value;
+          this.OnPropertyChanged();
+        }
+      }
+    }
+    private bool _isMilestoneEdit;
 
     public MainViewModel()
     {
@@ -89,5 +104,13 @@ namespace ClipRateRecorder.ViewModels
         await this.mainWatcherModel.SetDefaultEvaluationAsync(((ExePathActivityGroup)pms[0]).ExePath, (string)pms[1]);
       });
     private ReactiveCommand<object[]>? _setDefaultEvaluationCommand;
+
+    public ReactiveCommand AddMilestoneCommand =>
+      this._addMilestoneCommand ??= new ReactiveCommand().WithSubscribe(async () => await this.mainWatcherModel.AddMilestoneAsync());
+    private ReactiveCommand? _addMilestoneCommand;
+
+    public ReactiveCommand<Milestone> RemoveMilestoneCommand =>
+      this._removeMilestoneCommand ??= new ReactiveCommand<Milestone>().WithSubscribe(async milestone => await mainWatcherModel.RemoveMilestoneAsync(milestone));
+    private ReactiveCommand<Milestone>? _removeMilestoneCommand;
   }
 }

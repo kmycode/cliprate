@@ -14,6 +14,27 @@ namespace ClipRateRecorder.Utils
     Milestone,
   }
 
+  public class UtilData
+  {
+    public Dictionary<MilestoneTarget, string> MilestoneTargets { get; } = new()
+    {
+      { MilestoneTarget.AllEffective, "効率的な全ての時間" },
+      { MilestoneTarget.AllIneffective, "非効率的な全ての時間" },
+      { MilestoneTarget.MostEffective, "最も効率的な時間" },
+      { MilestoneTarget.Effective, "効率的な時間" },
+      { MilestoneTarget.Normal, "普通の時間" },
+      { MilestoneTarget.Ineffective, "非効率的な時間" },
+      { MilestoneTarget.MostIneffective, "最も非効率的な時間" },
+      { MilestoneTarget.Score, "スコア" },
+    };
+
+    public Dictionary<MilestoneType, string> MilestoneTypes { get; } = new()
+    {
+      { MilestoneType.More, "以上" },
+      { MilestoneType.Less, "以下" },
+    };
+  }
+
   internal static class EnumUtils
   {
     public static ActivityEvaluation StringToActivityEvaluation(string ev)

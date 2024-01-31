@@ -1,6 +1,7 @@
 ﻿using ClipRateRecorder.Models.Analysis.Ranges;
 using ClipRateRecorder.Models.Analysis.Rules;
 using ClipRateRecorder.Models.Db;
+using ClipRateRecorder.Models.Goals;
 using ClipRateRecorder.Models.Watching;
 using ClipRateRecorder.Utils;
 using System;
@@ -15,7 +16,7 @@ namespace ClipRateRecorder.Models.Logics
 {
   internal class MainWatcherModel : IDisposable, INotifyPropertyChanged
   {
-    private IWatcherLoop? loop;
+    private readonly IWatcherLoop loop;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -77,25 +78,25 @@ namespace ClipRateRecorder.Models.Logics
 
     public MainWatcherModel()
     {
+      this.loop = ActivityWatcher.StartWatchLoop();
+
       Task.Run(async () => await this.ChangeDayAsync(DateTime.Now, withSpot: true));
     }
 
     private async Task ChangeDayAsync(DateTime day, bool withSpot = false)
     {
-      if (this.loop != null)
+      if (this.Range != null && this.MilestoneRange != null && this.SpotRange != null)
       {
-        this.loop.Ticked -= this.Range!.ActivityGroups.OnWindowActivityTicked;
-        this.Range!.ActivityGroups.StatisticsUpdated -= this.MilestoneRange!.OnActivityStatisticsUpdated;
+        this.loop.Ticked -= this.Range.ActivityGroups.OnWindowActivityTicked;
+        this.Range!.ActivityGroups.StatisticsUpdated -= this.MilestoneRange.OnActivityStatisticsUpdated;
         if (withSpot)
         {
-          this.loop.Ticked -= this.SpotRange!.ActivityGroups.OnWindowActivityTicked;
+          this.loop.Ticked -= this.SpotRange.ActivityGroups.OnWindowActivityTicked;
         }
       }
 
       this.Range?.Dispose();
       this.SpotRange?.Dispose();
-
-      this.loop = ActivityWatcher.StartWatchLoop();
 
       using var db = new MainContext();
       var evalucator = await ActivityEvaluator.CreateFromDatabaseAsync(db);
@@ -103,6 +104,7 @@ namespace ClipRateRecorder.Models.Logics
       var range = await ActivityRange.RangeOfDayAsync(day, evalucator);
       var spotRange = await ActivityRange.RangeOfEmptyAsync(evalucator);
       var milestone = await MilestoneRange.RangeOfDayAsync(day);
+      milestone.UpdateStatuses(range.ActivityGroups);
 
       ThreadUtil.RunGuiThread(() =>
       {
@@ -173,6 +175,28 @@ namespace ClipRateRecorder.Models.Logics
 
       await this.Range!.ActivityGroups.SetDefaultEvaluationAsync(exePath, evaluation);
       await this.SpotRange!.ActivityGroups.SetDefaultEvaluationAsync(exePath, evaluation);
+    }
+
+    public async Task AddMilestoneAsync()
+    {
+      if (this.MilestoneRange == null)
+      {
+        return;
+      }
+
+      await this.MilestoneRange.AddMilestoneAsync(this.CurrentDay);
+    }
+
+    public async Task RemoveMilestoneAsync(Milestone milestone)
+    {
+      if (this.MilestoneRange == null)
+      {
+        return;
+      }
+
+      using var db = new MainContext();
+      await milestone.RemoveDataAndSaveAsync(db);
+      this.MilestoneRange.Milestones.Remove(milestone);
     }
   }
 }

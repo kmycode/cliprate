@@ -15,6 +15,9 @@ namespace ClipRateRecorder.Models.Goals
   internal class Milestone : INotifyPropertyChanged
   {
     private MilestoneData? Data { get; set; }
+
+    private IEnumerable<WindowActivity>? lastActivities;
+    private bool isInitializing;
     
     public MilestoneType Type
     {
@@ -24,6 +27,8 @@ namespace ClipRateRecorder.Models.Goals
         if (this._type == value) return;
         this._type = value;
         this.OnPropertyChanged();
+        this.UpdateStatusWithLatestData();
+        this.SaveData();
       }
     }
     private MilestoneType _type;
@@ -36,6 +41,8 @@ namespace ClipRateRecorder.Models.Goals
         if (this._target == value) return;
         this._target = value;
         this.OnPropertyChanged();
+        this.UpdateStatusWithLatestData();
+        this.SaveData();
       }
     }
     private MilestoneTarget _target;
@@ -48,6 +55,8 @@ namespace ClipRateRecorder.Models.Goals
         if (this._value == value) return;
         this._value = value;
         this.OnPropertyChanged();
+        this.UpdateStatusWithLatestData();
+        this.SaveData();
       }
     }
     private double _value;
@@ -72,6 +81,7 @@ namespace ClipRateRecorder.Models.Goals
         if (this._startTime == value) return;
         this._startTime = value;
         this.OnPropertyChanged();
+        this.SaveData();
       }
     }
     private DateTime _startTime;
@@ -84,6 +94,7 @@ namespace ClipRateRecorder.Models.Goals
         if (this._endTime == value) return;
         this._endTime = value;
         this.OnPropertyChanged();
+        this.SaveData();
       }
     }
     private DateTime _endTime;
@@ -148,6 +159,7 @@ namespace ClipRateRecorder.Models.Goals
         if (this._status == value) return;
         this._status = value;
         this.OnPropertyChanged();
+        this.SaveData();
       }
     }
     private MilestoneStatus _status;
@@ -176,25 +188,69 @@ namespace ClipRateRecorder.Models.Goals
       await db.SaveChangesAsync();
     }
 
+    private void SaveData()
+    {
+      if (this.isInitializing)
+      {
+        return;
+      }
+
+      Task.Run(async () =>
+      {
+        using var db = new MainContext();
+        await this.SaveDataAsync(db);
+      });
+    }
+
     private void UpdateStartTime()
     {
       this.StartTime = this.StartTime.Date.Add(new TimeSpan(this.StartHours, this.StartMinutes, 0));
+      this.UpdateStatusWithLatestData();
     }
 
     private void UpdateEndTime()
     {
       this.EndTime = this.EndTime.Date.Add(new TimeSpan(this.EndHours, this.EndMinutes, 0));
+      this.UpdateStatusWithLatestData();
     }
 
-    public Milestone() { }
+    public Milestone(DateTime day)
+    {
+      this.isInitializing = true;
+      this._startTime = day.Date;
+      this._endTime = day.Date.AddDays(1).AddMinutes(-1);
+      this._startHours = this.StartTime.Hour;
+      this._startMinutes = this.StartTime.Minute;
+      this._endHours = this.EndTime.Hour;
+      this._endMinutes = this.EndTime.Minute;
+      this.isInitializing = false;
+    }
+
+    public Milestone(DateOnly day) : this(day.ToDateTime(TimeOnly.MinValue))
+    {
+    }
+
+    public Milestone(DateTime start, DateTime end)
+    {
+      this.isInitializing = true;
+      this._startTime = start;
+      this._endTime = end;
+      this._startHours = this.StartTime.Hour;
+      this._startMinutes = this.StartTime.Minute;
+      this._endHours = this.EndTime.Hour;
+      this._endMinutes = this.EndTime.Minute;
+      this.isInitializing = false;
+    }
 
     private Milestone(MilestoneData data)
     {
+      this.isInitializing = true;
       this.Data = data;
       this.ReadData();
+      this.isInitializing = false;
     }
 
-    public void RemoveData(MainContext db)
+    public async Task RemoveDataAndSaveAsync(MainContext db)
     {
       if (this.Data == null || this.Data.Id == default)
       {
@@ -202,6 +258,9 @@ namespace ClipRateRecorder.Models.Goals
       }
 
       db.Milestones!.Remove(this.Data);
+      await db.SaveChangesAsync();
+
+      this.Data.Id = default;
     }
 
     private void ReadData()
@@ -237,52 +296,62 @@ namespace ClipRateRecorder.Models.Goals
       this.Data.Value = this.Value;
     }
 
+    private void UpdateStatusWithLatestData()
+    {
+      if (this.lastActivities == null)
+      {
+        return;
+      }
+
+      this.UpdateStatus(this.lastActivities);
+    }
+
     public void UpdateStatus(IEnumerable<WindowActivity> activities)
     {
+      this.lastActivities = activities;
+
       var statistics = new ActivityStatistics(activities.Where(a => a.StartTime >= this.StartTime && a.StartTime <= this.EndTime));
       this.UpdateStatus(statistics);
     }
 
     private void UpdateStatus(ActivityStatistics statistics)
     {
-      var isAchieved = this.IsAchieved(statistics);
+      bool IsAchieved()
+      {
+        if (this.Type == MilestoneType.More)
+        {
+          return this.CurrentValue >= this.Value;
+        }
+        else if (this.Type == MilestoneType.Less)
+        {
+          return this.CurrentValue <= this.Value;
+        }
+
+        return false;
+      }
+
+      this.UpdateCurrentValue(statistics);
+
+      var isAchieved = IsAchieved();
       this.Status = isAchieved ? MilestoneStatus.Achieved : MilestoneStatus.Processing;
     }
 
-    private bool IsAchieved(ActivityStatistics statistics)
+    private void UpdateCurrentValue(ActivityStatistics statistics)
     {
-      if (this.Type == MilestoneType.More)
+      var currentValue = this.Target switch
       {
-        return this.Target switch
-        {
-          MilestoneTarget.AllEffective => statistics.Effective + statistics.MostEffective >= this.Value,
-          MilestoneTarget.AllIneffective => statistics.Ineffective + statistics.MostIneffective >= this.Value,
-          MilestoneTarget.MostEffective => statistics.MostEffective >= this.Value,
-          MilestoneTarget.Effective => statistics.Effective >= this.Value,
-          MilestoneTarget.Normal => statistics.Normal >= this.Value,
-          MilestoneTarget.Ineffective => statistics.Ineffective >= this.Value,
-          MilestoneTarget.MostIneffective => statistics.MostIneffective >= this.Value,
-          MilestoneTarget.Score => statistics.Score >= this.Value,
-          _ => false,
-        };
-      }
-      else if (this.Type == MilestoneType.Less)
-      {
-        return this.Target switch
-        {
-          MilestoneTarget.AllEffective => statistics.Effective + statistics.MostEffective <= this.Value,
-          MilestoneTarget.AllIneffective => statistics.Ineffective + statistics.MostIneffective <= this.Value,
-          MilestoneTarget.MostEffective => statistics.MostEffective <= this.Value,
-          MilestoneTarget.Effective => statistics.Effective <= this.Value,
-          MilestoneTarget.Normal => statistics.Normal <= this.Value,
-          MilestoneTarget.Ineffective => statistics.Ineffective <= this.Value,
-          MilestoneTarget.MostIneffective => statistics.MostIneffective <= this.Value,
-          MilestoneTarget.Score => statistics.Score <= this.Value,
-          _ => false,
-        };
-      }
+        MilestoneTarget.AllEffective => statistics.Effective + statistics.MostEffective,
+        MilestoneTarget.AllIneffective => statistics.Ineffective + statistics.MostIneffective,
+        MilestoneTarget.MostEffective => statistics.MostEffective,
+        MilestoneTarget.Effective => statistics.Effective,
+        MilestoneTarget.Normal => statistics.Normal,
+        MilestoneTarget.Ineffective => statistics.Ineffective,
+        MilestoneTarget.MostIneffective => statistics.MostIneffective,
+        MilestoneTarget.Score => statistics.Score,
+        _ => 0.0,
+      };
 
-      return false;
+      this.CurrentValue = currentValue;
     }
 
     public static Milestone FromData(MilestoneData data)

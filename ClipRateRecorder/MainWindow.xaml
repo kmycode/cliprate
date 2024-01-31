@@ -1,9 +1,10 @@
-﻿<Window x:Class="ClipRateRecorder.MainWindow"
+﻿<Window x:Class="ClipRateRecorder.MainWindow" Name="Root"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+        xmlns:gen="clr-namespace:System.Collections.Generic;assembly=mscorlib"
         xmlns:scott="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF"
         xmlns:local="clr-namespace:ClipRateRecorder"
         xmlns:vm="clr-namespace:ClipRateRecorder.ViewModels"
@@ -20,11 +21,14 @@
     <cv:ActivityEvaluation2BrushConverter x:Key="ActivityEvaluation2BrushConv"/>
     <cv:Boolean2VisibilityConverter x:Key="Boolean2VisibilityConv"/>
     <cv:FixedStringLiteralConverter x:Key="FixedStringLiteralConv"/>
+    <cv:ForegroundBrushConverter x:Key="ForegroundBrushConv"/>
+    <cv:LabelConverter x:Key="LabelConv"/>
     <cv:MultibleBooleanOrConverter x:Key="MultipleBooleanOrConv"/>
     <cv:MultipleCommandParametersConverter x:Key="MultipleCommandParametersConv"/>
     <cv:NegativeConverter x:Key="NegativeConv"/>
     <cv:ViewPageConverter x:Key="ViewPageConv"/>
     <u:BindingProxy Data="{Binding}" x:Key="RootBindingProxy"/>
+    <u:UtilData x:Key="UtilData"/>
     <Style TargetType="TextBlock" x:Key="Default">
       <Setter Property="Foreground" Value="White"/>
     </Style>
@@ -206,8 +210,10 @@
       </Grid.RowDefinitions>
 
       <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" ScrollViewer.VerticalScrollBarVisibility="Hidden">
-        <Button Content="Add" Height="40" Width="100" Margin="0"/>
-        <ToggleButton Content="Edit" Style="{StaticResource DefaultToggleButton}" FontSize="20" Height="40" Width="100" HorizontalContentAlignment="Center"/>
+        <Button Content="Add" Height="40" Width="100" Margin="0" Visibility="{Binding IsMilestoneEdit,Converter={StaticResource Boolean2VisibilityConv}}"
+                Command="{Binding AddMilestoneCommand}"/>
+        <ToggleButton Content="Edit" Style="{StaticResource DefaultToggleButton}" FontSize="20" Height="40" Width="100" HorizontalContentAlignment="Center"
+                      IsChecked="{Binding IsMilestoneEdit}"/>
       </StackPanel>
 
       <Grid Grid.Row="1">
@@ -228,11 +234,75 @@
           <ItemsControl.ItemTemplate>
             <DataTemplate>
               <Grid Margin="0,0,0,8">
-                <StackPanel>
+                <StackPanel Visibility="{Binding DataContext.IsMilestoneEdit,RelativeSource={RelativeSource AncestorType=local:MainWindow},Converter={StaticResource Boolean2VisibilityConv},ConverterParameter=Negative}">
                   <TextBlock Style="{StaticResource Default}" FontSize="24">
-                    <Run Text="{Binding StartTime,StringFormat=HH:mm,Mode=OneWay}"/> <Run Text="から" FontSize="16"/> <Run Text="{Binding EndTime,StringFormat=HH:mm,Mode=OneWay}"/> <Run Text="まで" FontSize="16"/> <Run Text="スコア" FontSize="16" Foreground="#aff"/> <Run Text="{Binding Value,StringFormat=0}"/> <Run Text="以上" FontSize="16"/>
+                    <Run Text="{Binding StartTime,StringFormat=HH:mm,Mode=OneWay}"/> <Run Text="から" FontSize="16"/> <Run Text="{Binding EndTime,StringFormat=HH:mm,Mode=OneWay}"/> <Run Text="まで" FontSize="16"/> <Run Text="{Binding Target,Converter={StaticResource LabelConv}}" FontSize="16" Foreground="#aff"/> <Run Text="{Binding Value,StringFormat=0}"/> <Run Text="{Binding Type,Converter={StaticResource LabelConv}}" FontSize="16"/>
                   </TextBlock>
-                  <TextBlock Style="{StaticResource Default}" FontSize="36" FontWeight="Bold" Text="{Binding CurrentValue,StringFormat=0}"/>
+                  <TextBlock Style="{StaticResource Default}" FontSize="36" FontWeight="Bold"
+                             Foreground="{Binding Status,Converter={StaticResource ForegroundBrushConv}}"
+                             Text="{Binding CurrentValue,StringFormat=0.0}"/>
+                </StackPanel>
+                <StackPanel Visibility="{Binding DataContext.IsMilestoneEdit,RelativeSource={RelativeSource AncestorType=local:MainWindow},Converter={StaticResource Boolean2VisibilityConv}}">
+                  <Grid>
+                    <Grid.Resources>
+                      <Style TargetType="TextBlock" BasedOn="{StaticResource Default}">
+                        <Setter Property="FontSize" Value="16"/>
+                        <Setter Property="VerticalAlignment" Value="Bottom"/>
+                      </Style>
+                      <Style TargetType="TextBox">
+                        <Setter Property="Background" Value="Black"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="FontSize" Value="20"/>
+                        <Setter Property="Margin" Value="4,0"/>
+                        <Setter Property="Width" Value="60"/>
+                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                      </Style>
+                      <Style TargetType="ComboBox">
+                        <Setter Property="FontSize" Value="16"/>
+                      </Style>
+                    </Grid.Resources>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="auto"/>
+                      <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Button Content="削除" FontSize="12" Padding="2" VerticalAlignment="Center" Margin="8,0,24,0"
+                            Command="{Binding DataContext.RemoveMilestoneCommand,RelativeSource={RelativeSource AncestorType=local:MainWindow}}"
+                            CommandParameter="{Binding}"/>
+                    <Grid Grid.Column="1">
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition/>
+                      </Grid.ColumnDefinitions>
+                      <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                      </Grid.RowDefinitions>
+                      <TextBlock Grid.Row="0" Text="開始: "/>
+                      <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBox Text="{Binding StartHours}"/>
+                        <TextBlock Text="時"/>
+                        <TextBox Text="{Binding StartMinutes}"/>
+                        <TextBlock Text="分"/>
+                      </StackPanel>
+                      <TextBlock Grid.Row="1" Text="終了: "/>
+                      <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,4">
+                        <TextBox Text="{Binding EndHours}"/>
+                        <TextBlock Text="時"/>
+                        <TextBox Text="{Binding EndMinutes}"/>
+                        <TextBlock Text="分"/>
+                      </StackPanel>
+                      <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,4">
+                        <ComboBox ItemsSource="{Binding MilestoneTargets,Source={StaticResource UtilData}}" Width="200"
+                                  DisplayMemberPath="Value" SelectedValue="{Binding Target}" SelectedValuePath="Key"/>
+                        <TextBlock Text=" が "/>
+                        <TextBox Text="{Binding Value}" Width="80"/>
+                        <ComboBox ItemsSource="{Binding MilestoneTypes,Source={StaticResource UtilData}}" Width="80"
+                                  DisplayMemberPath="Value" SelectedValue="{Binding Type}" SelectedValuePath="Key"/>
+                      </StackPanel>
+                    </Grid>
+                  </Grid>
                 </StackPanel>
               </Grid>
             </DataTemplate>
