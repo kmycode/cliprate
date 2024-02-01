@@ -11,8 +11,9 @@
         xmlns:cv="clr-namespace:ClipRateRecorder.Converters"
         xmlns:b="clr-namespace:ClipRateRecorder.Behaviors"
         xmlns:u="clr-namespace:ClipRateRecorder.Utils"
+        xmlns:vc="clr-namespace:ClipRateRecorder.Views.Controls"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="ClipRateRecorder" Height="450" Width="800">
   <Window.DataContext>
     <vm:MainViewModel/>
   </Window.DataContext>
@@ -20,6 +21,7 @@
     <cv:ActivityEvaluation2BooleanConverter x:Key="ActivityEvaluation2BooleanConv"/>
     <cv:ActivityEvaluation2BrushConverter x:Key="ActivityEvaluation2BrushConv"/>
     <cv:Boolean2VisibilityConverter x:Key="Boolean2VisibilityConv"/>
+    <cv:EndTimeSpanConverter x:Key="EndTimeSpanConv"/>
     <cv:FixedStringLiteralConverter x:Key="FixedStringLiteralConv"/>
     <cv:ForegroundBrushConverter x:Key="ForegroundBrushConv"/>
     <cv:LabelConverter x:Key="LabelConv"/>
@@ -236,7 +238,7 @@
               <Grid Margin="0,0,0,8">
                 <StackPanel Visibility="{Binding DataContext.IsMilestoneEdit,RelativeSource={RelativeSource AncestorType=local:MainWindow},Converter={StaticResource Boolean2VisibilityConv},ConverterParameter=Negative}">
                   <TextBlock Style="{StaticResource Default}" FontSize="24">
-                    <Run Text="{Binding StartTime,StringFormat=HH:mm,Mode=OneWay}"/> <Run Text="から" FontSize="16"/> <Run Text="{Binding EndTime,StringFormat=HH:mm,Mode=OneWay}"/> <Run Text="まで" FontSize="16"/> <Run Text="{Binding Target,Converter={StaticResource LabelConv}}" FontSize="16" Foreground="#aff"/> <Run Text="{Binding Value,StringFormat=0}"/> <Run Text="{Binding Type,Converter={StaticResource LabelConv}}" FontSize="16"/>
+                    <Run Text="{Binding StartTime,StringFormat=HH:mm,Mode=OneWay}"/> <Run Text="から" FontSize="16"/> <Run Text="{Binding EndTimeSpan,Converter={StaticResource EndTimeSpanConv},Mode=OneWay}"/> <Run Text="まで" FontSize="16"/> <Run Text="{Binding Target,Converter={StaticResource LabelConv}}" FontSize="16" Foreground="#aff"/> <Run Text="{Binding Value,StringFormat=0}"/> <Run Text="{Binding Type,Converter={StaticResource LabelConv}}" FontSize="16"/>
                   </TextBlock>
                   <TextBlock Style="{StaticResource Default}" FontSize="36" FontWeight="Bold"
                              Foreground="{Binding Status,Converter={StaticResource ForegroundBrushConv}}"
@@ -249,7 +251,7 @@
                         <Setter Property="FontSize" Value="16"/>
                         <Setter Property="VerticalAlignment" Value="Bottom"/>
                       </Style>
-                      <Style TargetType="TextBox">
+                      <Style TargetType="{x:Type vc:AutoFocusTextBox}">
                         <Setter Property="Background" Value="Black"/>
                         <Setter Property="Foreground" Value="White"/>
                         <Setter Property="FontSize" Value="20"/>
@@ -281,23 +283,23 @@
                       </Grid.RowDefinitions>
                       <TextBlock Grid.Row="0" Text="開始: "/>
                       <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,4">
-                        <TextBox Text="{Binding StartHours}"/>
+                        <vc:AutoFocusTextBox Text="{Binding StartHours,StringFormat=00}"/>
                         <TextBlock Text="時"/>
-                        <TextBox Text="{Binding StartMinutes}"/>
+                        <vc:AutoFocusTextBox Text="{Binding StartMinutes,StringFormat=00}"/>
                         <TextBlock Text="分"/>
                       </StackPanel>
                       <TextBlock Grid.Row="1" Text="終了: "/>
                       <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,4">
-                        <TextBox Text="{Binding EndHours}"/>
+                        <vc:AutoFocusTextBox Text="{Binding EndHours,StringFormat=00}"/>
                         <TextBlock Text="時"/>
-                        <TextBox Text="{Binding EndMinutes}"/>
+                        <vc:AutoFocusTextBox Text="{Binding EndMinutes,StringFormat=00}"/>
                         <TextBlock Text="分"/>
                       </StackPanel>
                       <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,4">
                         <ComboBox ItemsSource="{Binding MilestoneTargets,Source={StaticResource UtilData}}" Width="200"
                                   DisplayMemberPath="Value" SelectedValue="{Binding Target}" SelectedValuePath="Key"/>
                         <TextBlock Text=" が "/>
-                        <TextBox Text="{Binding Value}" Width="80"/>
+                        <vc:AutoFocusTextBox Text="{Binding Value}" Width="80"/>
                         <ComboBox ItemsSource="{Binding MilestoneTypes,Source={StaticResource UtilData}}" Width="80"
                                   DisplayMemberPath="Value" SelectedValue="{Binding Type}" SelectedValuePath="Key"/>
                       </StackPanel>

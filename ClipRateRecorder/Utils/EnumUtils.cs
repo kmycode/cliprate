@@ -20,11 +20,11 @@ namespace ClipRateRecorder.Utils
     {
       { MilestoneTarget.AllEffective, "効率的な全ての時間" },
       { MilestoneTarget.AllIneffective, "非効率的な全ての時間" },
-      { MilestoneTarget.MostEffective, "最も効率的な時間" },
+      { MilestoneTarget.MostEffective, "非常に効率的な時間" },
       { MilestoneTarget.Effective, "効率的な時間" },
       { MilestoneTarget.Normal, "普通の時間" },
       { MilestoneTarget.Ineffective, "非効率的な時間" },
-      { MilestoneTarget.MostIneffective, "最も非効率的な時間" },
+      { MilestoneTarget.MostIneffective, "非常に非効率的な時間" },
       { MilestoneTarget.Score, "スコア" },
     };
 

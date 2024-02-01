@@ -99,13 +99,27 @@ namespace ClipRateRecorder.Models.Goals
     }
     private DateTime _endTime;
 
+    public TimeSpan EndTimeSpan
+    {
+      get => this._endTimeSpan;
+      private set
+      {
+        if (this._endTimeSpan == value) return;
+        this._endTimeSpan = value;
+        this.OnPropertyChanged();
+      }
+    }
+    private TimeSpan _endTimeSpan;
+
     public int StartHours
     {
       get => this._startHours;
       set
       {
-        if (this._startHours == value) return;
-        this._startHours = value;
+        var v = value % 24;
+
+        if (this._startHours == v) return;
+        this._startHours = v;
         this.OnPropertyChanged();
         this.UpdateStartTime();
       }
@@ -117,8 +131,10 @@ namespace ClipRateRecorder.Models.Goals
       get => this._startMinutes;
       set
       {
-        if (this._startMinutes == value) return;
-        this._startMinutes = value;
+        var v = value % 60;
+
+        if (this._startMinutes == v) return;
+        this._startMinutes = v;
         this.OnPropertyChanged();
         this.UpdateStartTime();
       }
@@ -127,11 +143,21 @@ namespace ClipRateRecorder.Models.Goals
 
     public int EndHours
     {
-      get => this._endHours;
+      get
+      {
+        if (this.StartTime.Date != this.EndTime.Date && this._endHours == 0)
+        {
+          return 24;
+        }
+        return this._endHours;
+      }
       set
       {
-        if (this._endHours == value) return;
-        this._endHours = value;
+        var v = value % 24;
+        if (value == 24) v = 24;
+
+        if (this._endHours == v) return;
+        this._endHours = v;
         this.OnPropertyChanged();
         this.UpdateEndTime();
       }
@@ -143,8 +169,10 @@ namespace ClipRateRecorder.Models.Goals
       get => this._endMinutes;
       set
       {
-        if (this._endMinutes == value) return;
-        this._endMinutes = value;
+        var v = value % 60;
+
+        if (this._endMinutes == v) return;
+        this._endMinutes = v;
         this.OnPropertyChanged();
         this.UpdateEndTime();
       }
@@ -210,19 +238,26 @@ namespace ClipRateRecorder.Models.Goals
 
     private void UpdateEndTime()
     {
-      this.EndTime = this.EndTime.Date.Add(new TimeSpan(this.EndHours, this.EndMinutes, 0));
+      this.EndTime = this.StartTime.Date.Add(new TimeSpan(this.EndHours, this.EndMinutes, 0));
+      this.UpdateEndTimeSpan();
       this.UpdateStatusWithLatestData();
+    }
+
+    private void UpdateEndTimeSpan()
+    {
+      this.EndTimeSpan = this.StartTime.Date <= this.EndTime ? this.EndTime - this.StartTime.Date : TimeSpan.Zero;
     }
 
     public Milestone(DateTime day)
     {
       this.isInitializing = true;
       this._startTime = day.Date;
-      this._endTime = day.Date.AddDays(1).AddMinutes(-1);
+      this._endTime = day.Date.AddDays(1);
       this._startHours = this.StartTime.Hour;
       this._startMinutes = this.StartTime.Minute;
       this._endHours = this.EndTime.Hour;
       this._endMinutes = this.EndTime.Minute;
+      this.UpdateEndTimeSpan();
       this.isInitializing = false;
     }
 
@@ -239,6 +274,7 @@ namespace ClipRateRecorder.Models.Goals
       this._startMinutes = this.StartTime.Minute;
       this._endHours = this.EndTime.Hour;
       this._endMinutes = this.EndTime.Minute;
+      this.UpdateEndTimeSpan();
       this.isInitializing = false;
     }
 
@@ -276,6 +312,7 @@ namespace ClipRateRecorder.Models.Goals
       this.StartMinutes = this.Data.StartTime.Minute;
       this.EndHours = this.Data.EndTime.Hour;
       this.EndMinutes = this.Data.EndTime.Minute;
+      this.UpdateEndTimeSpan();
 
       this.Target = this.Data.Target;
       this.Type = this.Data.Type;

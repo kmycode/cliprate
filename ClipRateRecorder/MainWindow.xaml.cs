@@ -33,22 +33,8 @@ namespace ClipRateRecorder
         }
       };
 
-      /*
-      double[] dataX = { 1, 2, 3, 4, 5 };
-      double[] dataY = { 1, 4, 9, 16, 25 };
-      TestPlot.Plot.Add.Scatter(dataX, dataY);
-      TestPlot.Refresh();
-      */
-
-      var plt = TestPlot.Plot;
-
-      // create sample data
-      double[] values = { 0 };
-
-      // add a bar graph to the plot
-      plt.Add.Pie(values);
-
-      TestPlot.Refresh();
+      this.TestPlot.Plot.Add.Pie(new double[] { 0, });
+      this.TestPlot.Refresh();
     }
   }
 }
