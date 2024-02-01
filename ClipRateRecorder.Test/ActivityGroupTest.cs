@@ -34,7 +34,7 @@ namespace ClipRateRecorder.Test
         new()
         {
           Title = "Calc",
-          ExePath = "C:\\calc.exe",
+          ExePath = "c:\\calc.exe",
           StartTime = new DateTime(2024, 1, 3, 5, 0, 0),
           EndTime = new DateTime(2024, 1, 3, 5, 10, 0),
         },
@@ -55,7 +55,7 @@ namespace ClipRateRecorder.Test
       Assert.AreEqual(exePath.WindowTitleGroups.TotalDuration, 10 * 60);
       Assert.AreEqual(title.TotalDuration, 10 * 60);
 
-      Assert.AreEqual(exePath.ExePath, "C:\\calc.exe");
+      Assert.AreEqual(exePath.ExePath, "c:\\calc.exe");
       Assert.AreEqual(title.Title, "Calc");
     }
 
@@ -67,14 +67,14 @@ namespace ClipRateRecorder.Test
         new()
         {
           Title = "Calc",
-          ExePath = "C:\\calc.exe",
+          ExePath = "c:\\calc.exe",
           StartTime = new DateTime(2024, 1, 3, 5, 0, 0),
           EndTime = new DateTime(2024, 1, 3, 5, 5, 0),
         },
         new()
         {
           Title = "Editing - Calc",
-          ExePath = "C:\\calc.exe",
+          ExePath = "c:\\calc.exe",
           StartTime = new DateTime(2024, 1, 3, 5, 5, 0),
           EndTime = new DateTime(2024, 1, 3, 5, 9, 0),
         },
@@ -99,7 +99,7 @@ namespace ClipRateRecorder.Test
       Assert.AreEqual(title.TotalDuration, 5 * 60);
       Assert.AreEqual(title2.TotalDuration, 4 * 60);
 
-      Assert.AreEqual(exePath.ExePath, "C:\\calc.exe");
+      Assert.AreEqual(exePath.ExePath, "c:\\calc.exe");
       Assert.AreEqual(title.Title, "Calc");
       Assert.AreEqual(title2.Title, "Editing - Calc");
     }
@@ -112,14 +112,14 @@ namespace ClipRateRecorder.Test
         new()
         {
           Title = "Calc",
-          ExePath = "C:\\calc.exe",
+          ExePath = "c:\\calc.exe",
           StartTime = new DateTime(2024, 1, 3, 5, 0, 0),
           EndTime = new DateTime(2024, 1, 3, 5, 5, 0),
         },
         new()
         {
           Title = "Notepad",
-          ExePath = "C:\\notepad.exe",
+          ExePath = "c:\\notepad.exe",
           StartTime = new DateTime(2024, 1, 3, 5, 5, 0),
           EndTime = new DateTime(2024, 1, 3, 5, 9, 0),
         },
@@ -149,8 +149,8 @@ namespace ClipRateRecorder.Test
       Assert.AreEqual(exePath2.WindowTitleGroups.TotalDuration, 4 * 60);
       Assert.AreEqual(title2.TotalDuration, 4 * 60);
 
-      Assert.AreEqual(exePath.ExePath, "C:\\calc.exe");
-      Assert.AreEqual(exePath2.ExePath, "C:\\notepad.exe");
+      Assert.AreEqual(exePath.ExePath, "c:\\calc.exe");
+      Assert.AreEqual(exePath2.ExePath, "c:\\notepad.exe");
       Assert.AreEqual(title.Title, "Calc");
       Assert.AreEqual(title2.Title, "Notepad");
     }
@@ -163,21 +163,21 @@ namespace ClipRateRecorder.Test
         new()
         {
           Title = "Calc",
-          ExePath = "C:\\calc.exe",
+          ExePath = "c:\\calc.exe",
           StartTime = new DateTime(2024, 1, 3, 5, 0, 0),
           EndTime = new DateTime(2024, 1, 3, 5, 5, 0),
         },
         new()
         {
           Title = "Notepad",
-          ExePath = "C:\\notepad.exe",
+          ExePath = "c:\\notepad.exe",
           StartTime = new DateTime(2024, 1, 3, 5, 5, 0),
           EndTime = new DateTime(2024, 1, 3, 5, 9, 0),
         },
         new()
         {
           Title = "Editing - Calc",
-          ExePath = "C:\\calc.exe",
+          ExePath = "c:\\calc.exe",
           StartTime = new DateTime(2024, 1, 3, 5, 9, 0),
           EndTime = new DateTime(2024, 1, 3, 5, 11, 0),
         },
@@ -211,8 +211,8 @@ namespace ClipRateRecorder.Test
       Assert.AreEqual(exePath2.WindowTitleGroups.TotalDuration, 4 * 60);
       Assert.AreEqual(title2.TotalDuration, 4 * 60);
 
-      Assert.AreEqual(exePath.ExePath, "C:\\calc.exe");
-      Assert.AreEqual(exePath2.ExePath, "C:\\notepad.exe");
+      Assert.AreEqual(exePath.ExePath, "c:\\calc.exe");
+      Assert.AreEqual(exePath2.ExePath, "c:\\notepad.exe");
       Assert.AreEqual(title.Title, "Calc");
       Assert.AreEqual(title2.Title, "Notepad");
       Assert.AreEqual(title3.Title, "Editing - Calc");
@@ -226,14 +226,14 @@ namespace ClipRateRecorder.Test
         new()
         {
           Title = "Calc",
-          ExePath = "C:\\calc.exe",
+          ExePath = "c:\\calc.exe",
           StartTime = new DateTime(2024, 1, 3, 5, 0, 0),
           EndTime = new DateTime(2024, 1, 3, 5, 10, 0),
         },
         new()
         {
           Title = "Calc",
-          ExePath = "C:\\calc.exe",
+          ExePath = "c:\\calc.exe",
           StartTime = new DateTime(2024, 1, 3, 5, 10, 0),
           EndTime = new DateTime(2024, 1, 3, 5, 20, 0),
         },
@@ -254,7 +254,7 @@ namespace ClipRateRecorder.Test
       Assert.AreEqual(exePath.WindowTitleGroups.TotalDuration, 20 * 60);
       Assert.AreEqual(title.TotalDuration, 20 * 60);
 
-      Assert.AreEqual(exePath.ExePath, "C:\\calc.exe");
+      Assert.AreEqual(exePath.ExePath, "c:\\calc.exe");
       Assert.AreEqual(title.Title, "Calc");
     }
   }
